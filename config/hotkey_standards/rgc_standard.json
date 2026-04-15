@@ -1,0 +1,187 @@
+{
+  "metadata": {
+    "name": "Retro Game Corps (RGC) Standard",
+    "version": "1.0.0",
+    "source": "retrogamecorps.com - RetroArch Starter Guide",
+    "source_url": "https://retrogamecorps.com/2022/02/28/retroarch-starter-guide/",
+    "description": "Officiële RetroArch hotkey standaard zoals gedocumenteerd door Retro Game Corps. Gebaseerd op de RGC RetroArch Starter Guide. Ontworpen voor handheld Android/Linux devices met fysieke controllers.",
+    "author": "Retro Game Corps",
+    "emuflow_profile_id": "rgc_standard",
+    "last_updated": "2024-01-01"
+  },
+  "hotkeys": {
+    "hotkey_enable": {
+      "button": "SELECT",
+      "retroarch_key": "input_enable_hotkey_btn",
+      "btn_index": "6",
+      "description": "Hotkey enable knop. Houd SELECT ingedrukt en druk dan een andere knop voor de gewenste actie.",
+      "notes": "SELECT is knopindex 6 op de meeste Android handheld controllers"
+    },
+    "menu_toggle": {
+      "button": "X",
+      "retroarch_key": "input_menu_toggle_btn",
+      "btn_index": "2",
+      "combo_alt": "Hold START (2 seconds)",
+      "description": "Opent het RetroArch Quick Menu. Druk op X om het menu te openen/sluiten. Alternatief: houd START 2 seconden ingedrukt.",
+      "notes": "X knop = knopindex 2 op standaard Android layout"
+    },
+    "save_state": {
+      "button": "SELECT + R1",
+      "retroarch_key": "input_save_state_btn",
+      "btn_index": "5",
+      "requires_hotkey": true,
+      "description": "Sla de huidige spelstatus op in de actieve saveslot.",
+      "notes": "R1 = knopindex 5"
+    },
+    "load_state": {
+      "button": "SELECT + L1",
+      "retroarch_key": "input_load_state_btn",
+      "btn_index": "4",
+      "requires_hotkey": true,
+      "description": "Laad de opgeslagen spelstatus uit de actieve saveslot.",
+      "notes": "L1 = knopindex 4"
+    },
+    "fast_forward_toggle": {
+      "button": "SELECT + R2",
+      "retroarch_key": "input_hold_fast_forward_btn",
+      "btn_index": "7",
+      "requires_hotkey": true,
+      "mode": "toggle",
+      "description": "Schakel fast forward in/uit. Versnelt de emulatie zo snel als de hardware toelaat.",
+      "notes": "R2 = knopindex 7. Toggle modus: één keer indrukken = aan, nog een keer = uit."
+    },
+    "rewind": {
+      "button": "SELECT + L2",
+      "retroarch_key": "input_rewind_btn",
+      "btn_index": "6",
+      "requires_hotkey": true,
+      "requires_setting": "rewind_enable = true",
+      "description": "Spoel het spel terug in de tijd. Vereist dat Rewind globaal ingeschakeld is in RetroArch instellingen.",
+      "notes": "L2 = knopindex 6 als tweede binding. Rewind verbruikt extra RAM en CPU - alleen inschakelen indien nodig."
+    },
+    "show_fps": {
+      "button": "SELECT + Y",
+      "retroarch_key": "input_fps_toggle_btn",
+      "btn_index": "0",
+      "requires_hotkey": true,
+      "description": "Toon/verberg de FPS teller in de hoek van het scherm.",
+      "notes": "Y = knopindex 0"
+    },
+    "reset_game": {
+      "button": "SELECT + B",
+      "retroarch_key": "input_reset_btn",
+      "btn_index": "1",
+      "requires_hotkey": true,
+      "description": "Reset het huidige spel (soft reset). Equivalent aan de reset knop op de originele console.",
+      "notes": "B = knopindex 1"
+    },
+    "quit_close_content": {
+      "button": "SELECT + START",
+      "retroarch_key": "input_exit_emulator_btn",
+      "btn_index": "3",
+      "requires_hotkey": true,
+      "description": "Sluit de huidige content/ROM en keer terug naar het RetroArch hoofdmenu.",
+      "notes": "START = knopindex 3. Met confirm_quit = false gebeurt dit direct zonder bevestigingsvenster."
+    },
+    "volume_up": {
+      "button": "SELECT + D-pad Right",
+      "retroarch_key": "input_volume_up_axis",
+      "axis": "+1",
+      "requires_hotkey": true,
+      "description": "Verhoog het systeemvolume.",
+      "notes": "D-pad Right = positieve Y-as richting (+1)"
+    },
+    "volume_down": {
+      "button": "SELECT + D-pad Left",
+      "retroarch_key": "input_volume_down_axis",
+      "axis": "-1",
+      "requires_hotkey": true,
+      "description": "Verlaag het systeemvolume.",
+      "notes": "D-pad Left = negatieve Y-as richting (-1)"
+    },
+    "run_ahead": {
+      "button": "SELECT + D-pad Up",
+      "retroarch_key": "input_runahead_toggle",
+      "requires_hotkey": true,
+      "description": "Schakel Run-Ahead in/uit voor input lag reductie.",
+      "notes": "Run-Ahead reduceert input lag door frames vooruit te berekenen. Vereist krachtige hardware."
+    },
+    "next_save_slot": {
+      "button": "SELECT + D-pad Up",
+      "retroarch_key": "input_state_slot_increase",
+      "requires_hotkey": true,
+      "description": "Ga naar de volgende saveslot.",
+      "notes": "Combineer met SELECT+R1 om in de gewenste slot op te slaan."
+    },
+    "previous_save_slot": {
+      "button": "SELECT + D-pad Down",
+      "retroarch_key": "input_state_slot_decrease",
+      "requires_hotkey": true,
+      "description": "Ga naar de vorige saveslot.",
+      "notes": "Combineer met SELECT+L1 om uit de gewenste slot te laden."
+    }
+  },
+  "recommended_settings": {
+    "auto_save": {
+      "key": "savestate_auto_save",
+      "value": true,
+      "description": "Sla automatisch de spelstatus op bij het verlaten van content. Beschermt tegen dataverlies.",
+      "retroarch_cfg": "savestate_auto_save = \"true\""
+    },
+    "auto_load": {
+      "key": "savestate_auto_load",
+      "value": true,
+      "description": "Laad automatisch de laatste autosave bij het starten van content.",
+      "retroarch_cfg": "savestate_auto_load = \"true\""
+    },
+    "confirm_quit": {
+      "key": "quit_press_twice",
+      "value": false,
+      "description": "UIT: Geen bevestigingsvenster nodig bij het afsluiten. SELECT+START sluit direct af.",
+      "retroarch_cfg": "quit_press_twice = \"false\""
+    },
+    "overlay_hide_with_controller": {
+      "key": "input_overlay_hide_in_menu",
+      "value": true,
+      "description": "Verberg de touchscreen overlay wanneer een fysieke controller is aangesloten.",
+      "retroarch_cfg": "input_overlay_hide_in_menu = \"true\""
+    },
+    "rewind_globally": {
+      "key": "rewind_enable",
+      "value": false,
+      "description": "Rewind globaal UIT by default (prestatieimpact). Schakel per-core in indien gewenst.",
+      "retroarch_cfg": "rewind_enable = \"false\"",
+      "notes": "Aanbeveling RGC: alleen inschakelen voor lichtere systemen (NES/SNES/GBA). NIET voor PS1/N64 of hoger."
+    },
+    "run_ahead": {
+      "key": "run_ahead_enabled",
+      "value": false,
+      "description": "Run-Ahead globaal UIT by default. Schakel in per-core voor systemen met inherente input lag.",
+      "retroarch_cfg": "run_ahead_enabled = \"false\"",
+      "notes": "Aanbeveling RGC: gebruik 1-2 frames run-ahead voor NES/SNES/Genesis. Vereist krachtige chipset."
+    }
+  },
+  "button_index_reference": {
+    "description": "Standaard Android gamepad knopindices voor RetroArch (XInput/DInput layout)",
+    "Y": 0,
+    "B": 1,
+    "X": 2,
+    "START": 3,
+    "L1": 4,
+    "R1": 5,
+    "SELECT": 6,
+    "R2": 7,
+    "L2": 8,
+    "notes": "Indices kunnen variëren per controller. Gebruik RetroArch > Instellingen > Invoer > Kalibreer controllers om te verifiëren."
+  },
+  "notes": [
+    "SELECT dient altijd als de primaire hotkey enable knop - dit is de RGC universele standaard.",
+    "X als menu toggle is bewust gekozen omdat het zelden gebruikt wordt in retro games en goed bereikbaar is.",
+    "De 'Hold START 2 seconden' methode is een veilig alternatief als X conflicteert met een spel.",
+    "Rewind (SELECT+L2) vereist dat rewind_enable = true staat in RetroArch instellingen. Dit is standaard UIT vanwege prestatieimpact.",
+    "Volume Up/Down via D-pad Right/Left is een RGC-specifieke keuze die handig is voor handheld gebruik.",
+    "Auto Save/Load States AAN: RetroArch slaat de spelstatus automatisch op en laadt deze bij het heropenen van content.",
+    "Confirm Quit UIT: SELECT+START sluit direct af zonder extra bevestiging, wat de workflow versnelt.",
+    "Overlay verbergen bij controller AAN: de touchscreen overlay verdwijnt als een fysieke controller gebruikt wordt."
+  ]
+}

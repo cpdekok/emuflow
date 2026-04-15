@@ -1,0 +1,189 @@
+{
+  "metadata": {
+    "name": "TechDweeb Standard",
+    "version": "1.0.0",
+    "source": "TechDweeb - RetroArch Setup Guides 2024/2025",
+    "source_url": "https://www.youtube.com/@TechDweeb",
+    "description": "RetroArch hotkey standaard zoals gedocumenteerd door TechDweeb in zijn 2024/2025 setup guides. Licht afwijkend van RGC met A als menu toggle, slow motion, screenshot en Android-specifieke instellingen zoals input_block_timeout.",
+    "author": "TechDweeb",
+    "emuflow_profile_id": "techdweeb_standard",
+    "last_updated": "2025-01-01"
+  },
+  "hotkeys": {
+    "hotkey_enable": {
+      "button": "SELECT",
+      "retroarch_key": "input_enable_hotkey_btn",
+      "btn_index": "6",
+      "alt_button": "Apparaat-specifieke hotkey knop (indien aanwezig)",
+      "description": "Primaire hotkey enable knop. Op apparaten met een dedicated hotkey knop (bv. Anbernic, AYN Odin) kan die worden gebruikt als primaire hotkey. SELECT is de universele fallback.",
+      "notes": "SELECT = knopindex 6. Op apparaten met een dedicated hotkey: configureer die als input_enable_hotkey_btn."
+    },
+    "menu_toggle": {
+      "button": "A",
+      "retroarch_key": "input_menu_toggle_btn",
+      "btn_index": "1",
+      "combo_alt": "L3 + R3",
+      "description": "Opent het RetroArch Quick Menu. TechDweeb gebruikt A als primaire menu toggle. L3+R3 als backup combo voor controllers zonder gemakkelijke A-toegang.",
+      "notes": "A knop = knopindex 1 in Android/RetroArch XInput layout. L3+R3 combo vereist aparte binding in retroarch.cfg."
+    },
+    "save_state": {
+      "button": "SELECT + R1",
+      "retroarch_key": "input_save_state_btn",
+      "btn_index": "5",
+      "requires_hotkey": true,
+      "description": "Sla de huidige spelstatus op in de actieve saveslot.",
+      "notes": "R1 = knopindex 5. Identiek aan RGC standaard."
+    },
+    "load_state": {
+      "button": "SELECT + L1",
+      "retroarch_key": "input_load_state_btn",
+      "btn_index": "4",
+      "requires_hotkey": true,
+      "description": "Laad de opgeslagen spelstatus uit de actieve saveslot.",
+      "notes": "L1 = knopindex 4. Identiek aan RGC standaard."
+    },
+    "fast_forward": {
+      "button": "SELECT + R2",
+      "retroarch_key": "input_hold_fast_forward_btn",
+      "btn_index": "7",
+      "requires_hotkey": true,
+      "mode": "hold",
+      "description": "Fast forward terwijl SELECT+R2 ingehouden wordt. TechDweeb configureert dit als hold (niet toggle).",
+      "notes": "R2 = knopindex 7. Hold modus: loslaten stopt fast forward. Gebruik input_toggle_fast_forward_btn voor toggle modus."
+    },
+    "slow_motion": {
+      "button": "SELECT + L2",
+      "retroarch_key": "input_slowmotion_btn",
+      "btn_index": "8",
+      "requires_hotkey": true,
+      "description": "Activeer slow motion mode. TechDweeb gebruikt SELECT+L2 voor slow motion (RGC gebruikt dit voor rewind).",
+      "notes": "L2 = knopindex 8. Slow motion vertraagt de emulatie tot een instelbaar percentage van de normale snelheid."
+    },
+    "quit": {
+      "button": "SELECT + START",
+      "retroarch_key": "input_exit_emulator_btn",
+      "btn_index": "3",
+      "requires_hotkey": true,
+      "description": "Sluit de huidige content/ROM en verlaat RetroArch.",
+      "notes": "START = knopindex 3. Identiek aan RGC standaard."
+    },
+    "next_save_slot": {
+      "button": "SELECT + D-pad Right",
+      "retroarch_key": "input_state_slot_increase",
+      "axis": "+0",
+      "requires_hotkey": true,
+      "description": "Ga naar de volgende saveslot. TechDweeb bindt Next/Previous Save Slot aan D-pad Right/Left.",
+      "notes": "D-pad Right = positieve X-as richting (+0). Verschil met RGC: RGC gebruikt D-pad Right/Left voor volume."
+    },
+    "previous_save_slot": {
+      "button": "SELECT + D-pad Left",
+      "retroarch_key": "input_state_slot_decrease",
+      "axis": "-0",
+      "requires_hotkey": true,
+      "description": "Ga naar de vorige saveslot.",
+      "notes": "D-pad Left = negatieve X-as richting (-0)."
+    },
+    "volume_up": {
+      "button": "SELECT + D-pad Up",
+      "retroarch_key": "input_volume_up_axis",
+      "axis": "-1",
+      "requires_hotkey": true,
+      "description": "Verhoog het systeemvolume. TechDweeb gebruikt D-pad Up/Down voor volume (D-pad Right/Left = saveslot).",
+      "notes": "D-pad Up = negatieve Y-as richting (-1). Verschil met RGC: RGC gebruikt D-pad Right/Left voor volume."
+    },
+    "volume_down": {
+      "button": "SELECT + D-pad Down",
+      "retroarch_key": "input_volume_down_axis",
+      "axis": "+1",
+      "requires_hotkey": true,
+      "description": "Verlaag het systeemvolume.",
+      "notes": "D-pad Down = positieve Y-as richting (+1)."
+    },
+    "screenshot": {
+      "button": "SELECT + Y",
+      "retroarch_key": "input_screenshot_btn",
+      "btn_index": "0",
+      "requires_hotkey": true,
+      "description": "Maak een screenshot van het huidige scherm. Screenshots worden opgeslagen in de RetroArch screenshots map.",
+      "notes": "Y = knopindex 0. TechDweeb bindt screenshot aan SELECT+Y (RGC gebruikt dit voor FPS toggle)."
+    },
+    "menu_toggle_combo_l3r3": {
+      "button": "L3 + R3",
+      "retroarch_key": "input_menu_toggle_gamepad_combo",
+      "value": "4",
+      "description": "Backup combo voor menu toggle. L3+R3 tegelijk ingedrukt opent het Quick Menu.",
+      "notes": "RetroArch gamepad combo waarde 4 = L3+R3. Dit werkt zonder de hotkey enable knop."
+    }
+  },
+  "recommended_settings": {
+    "auto_save": {
+      "key": "savestate_auto_save",
+      "value": true,
+      "description": "Sla automatisch de spelstatus op bij het verlaten van content.",
+      "retroarch_cfg": "savestate_auto_save = \"true\""
+    },
+    "auto_load": {
+      "key": "savestate_auto_load",
+      "value": true,
+      "description": "Laad automatisch de laatste autosave bij het starten van content.",
+      "retroarch_cfg": "savestate_auto_load = \"true\""
+    },
+    "confirm_quit": {
+      "key": "quit_press_twice",
+      "value": false,
+      "description": "UIT: Geen bevestigingsvenster bij afsluiten. SELECT+START sluit direct.",
+      "retroarch_cfg": "quit_press_twice = \"false\""
+    },
+    "input_block_timeout": {
+      "key": "input_block_timeout",
+      "value": 1,
+      "description": "Android-specifieke instelling. Blokkeert invoer gedurende 1 frame na het openen van het menu. Voorkomt ongewenste menu-navigatie bij het openen van het Quick Menu.",
+      "retroarch_cfg": "input_block_timeout = \"1\"",
+      "platform": "Android"
+    },
+    "analog_to_digital": {
+      "key": "input_analog_dpad_mode",
+      "value": "left_analog",
+      "description": "Linker analoge stick werkt ook als D-pad. Handig voor games die alleen D-pad input accepteren.",
+      "retroarch_cfg": "input_analog_dpad_mode = \"1\"",
+      "notes": "Waarde 1 = Left Analog as D-pad. Waarde 0 = uitgeschakeld. Waarde 2 = Right Analog."
+    },
+    "menu_toggle_gamepad_combo": {
+      "key": "input_menu_toggle_gamepad_combo",
+      "value": 4,
+      "description": "L3+R3 als menu toggle combo. Waarde 4 = L3+R3 simultaan.",
+      "retroarch_cfg": "input_menu_toggle_gamepad_combo = \"4\""
+    }
+  },
+  "button_index_reference": {
+    "description": "Standaard Android gamepad knopindices voor RetroArch (XInput/DInput layout) - TechDweeb configuratie",
+    "Y": 0,
+    "A": 1,
+    "X": 2,
+    "START": 3,
+    "L1": 4,
+    "R1": 5,
+    "SELECT": 6,
+    "R2": 7,
+    "L2": 8,
+    "notes": "TechDweeb gebruikt A (index 1) als menu toggle, terwijl RGC X (index 2) gebruikt."
+  },
+  "differences_from_rgc": {
+    "menu_toggle": "TechDweeb: A knop | RGC: X knop",
+    "slow_motion_vs_rewind": "TechDweeb: SELECT+L2 = Slow Motion | RGC: SELECT+L2 = Rewind",
+    "screenshot_vs_fps": "TechDweeb: SELECT+Y = Screenshot | RGC: SELECT+Y = FPS Toggle",
+    "dpad_mappings": "TechDweeb: D-pad Up/Down = Volume, D-pad Right/Left = Save Slot | RGC: D-pad Right/Left = Volume, D-pad Up = Run-Ahead",
+    "android_specific": "TechDweeb voegt input_block_timeout = 1 toe voor Android",
+    "analog_to_digital": "TechDweeb configureert Left Analog als D-pad emulatie"
+  },
+  "notes": [
+    "TechDweeb gebruikt A als menu toggle in plaats van X, wat intuïtiever is op sommige controller layouts.",
+    "L3+R3 als backup combo voor menu toggle werkt zonder de hotkey enable knop - handig als SELECT bezet is.",
+    "Slow Motion (SELECT+L2) vs Rewind (RGC): TechDweeb geeft voorkeur aan slow motion omdat het geen extra RAM verbruikt.",
+    "input_block_timeout = 1 is een Android-specifieke optimalisatie die voorkomt dat het eerste frame na menu-opening verkeerd wordt geïnterpreteerd.",
+    "D-pad Right/Left voor saveslot switching is een logische keuze: links = vorige slot, rechts = volgende slot.",
+    "D-pad Up/Down voor volume is intuïtief: omhoog = luider, omlaag = stiller.",
+    "Screenshot (SELECT+Y) is handig voor het documenteren van spelmoments of het delen van content.",
+    "Analog to Digital (Left Analog) zorgt dat analoge stick ook werkt in menu-navigatie en retro games zonder analoge stick support."
+  ]
+}

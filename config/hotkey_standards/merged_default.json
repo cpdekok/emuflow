@@ -1,0 +1,252 @@
+{
+  "metadata": {
+    "name": "EmuFlow Default Standard",
+    "version": "1.0.0",
+    "source": "EmuFlow - Gecombineerde RGC + TechDweeb Standaard",
+    "description": "De EmuFlow standaard hotkey configuratie. Gebaseerd op de overlap tussen de Retro Game Corps (RGC) en TechDweeb standaarden. Waar RGC en TechDweeb overeenkomen wordt die binding gebruikt. Waar ze verschillen is gekozen voor de meest intuïtieve of breed-compatibele optie, met notatie van het verschil.",
+    "emuflow_profile_id": "emuflow_default",
+    "based_on": ["rgc_standard", "techdweeb_standard"],
+    "last_updated": "2025-01-01",
+    "consensus_level": {
+      "full_consensus": ["hotkey_enable", "save_state", "load_state", "fast_forward", "quit"],
+      "partial_consensus": ["menu_toggle", "volume_controls", "dpad_functions"],
+      "emuflow_choice": ["rewind_vs_slow_motion", "fps_vs_screenshot", "run_ahead"]
+    }
+  },
+  "hotkeys": {
+    "hotkey_enable": {
+      "button": "SELECT",
+      "retroarch_key": "input_enable_hotkey_btn",
+      "btn_index": "6",
+      "consensus": "VOLLEDIG - Zowel RGC als TechDweeb gebruiken SELECT als primaire hotkey enable.",
+      "description": "Houd SELECT ingedrukt en druk op een andere knop voor de gewenste hotkey actie.",
+      "notes": "SELECT is de universele standaard op alle handheld devices."
+    },
+    "menu_toggle": {
+      "button": "X",
+      "retroarch_key": "input_menu_toggle_btn",
+      "btn_index": "2",
+      "combo_backup": "L3 + R3",
+      "retroarch_combo_key": "input_menu_toggle_gamepad_combo",
+      "retroarch_combo_value": "4",
+      "consensus": "GEDEELTELIJK - RGC gebruikt X, TechDweeb gebruikt A. EmuFlow kiest X (RGC) omdat X minder vaak gebruikt wordt in retro games dan A/B. L3+R3 backup van TechDweeb wordt meegenomen.",
+      "emuflow_choice_reason": "X conflicteert minder met spellen dan A. L3+R3 als universeel backup.",
+      "description": "Opent het RetroArch Quick Menu. X knop is primair. L3+R3 is backup combo.",
+      "notes": "X = index 2. L3+R3 backup werkt zonder hotkey enable knop."
+    },
+    "save_state": {
+      "button": "SELECT + R1",
+      "retroarch_key": "input_save_state_btn",
+      "btn_index": "5",
+      "requires_hotkey": true,
+      "consensus": "VOLLEDIG - Beide standaarden gebruiken SELECT + R1.",
+      "description": "Sla de spelstatus op in de actieve saveslot.",
+      "notes": "R1 = index 5."
+    },
+    "load_state": {
+      "button": "SELECT + L1",
+      "retroarch_key": "input_load_state_btn",
+      "btn_index": "4",
+      "requires_hotkey": true,
+      "consensus": "VOLLEDIG - Beide standaarden gebruiken SELECT + L1.",
+      "description": "Laad de spelstatus uit de actieve saveslot.",
+      "notes": "L1 = index 4."
+    },
+    "fast_forward": {
+      "button": "SELECT + R2",
+      "retroarch_key": "input_hold_fast_forward_btn",
+      "btn_index": "7",
+      "requires_hotkey": true,
+      "mode": "toggle",
+      "consensus": "VOLLEDIG - Beide standaarden gebruiken SELECT + R2 voor fast forward.",
+      "description": "Schakel fast forward in/uit. EmuFlow gebruikt toggle modus (zoals RGC).",
+      "notes": "R2 = index 7. Toggle: één druk aan, nog een druk uit."
+    },
+    "rewind": {
+      "button": "SELECT + L2",
+      "retroarch_key": "input_rewind_btn",
+      "btn_index": "8",
+      "requires_hotkey": true,
+      "requires_setting": "rewind_enable = true",
+      "consensus": "EMUFLOW KEUZE - RGC gebruikt SELECT+L2 voor rewind, TechDweeb voor slow motion. EmuFlow geeft voorkeur aan rewind (RGC). Slow motion is beschikbaar via Quick Menu.",
+      "emuflow_choice_reason": "Rewind is functieel nuttiiger dan slow motion voor de meeste gebruikers. Slow motion is via menu toegankelijk.",
+      "description": "Spoel het spel terug in de tijd. Vereist rewind_enable = true in instellingen.",
+      "notes": "Alleen gebruiken op lichte systemen (NES/SNES/GBA). Standaard uitgeschakeld."
+    },
+    "quit": {
+      "button": "SELECT + START",
+      "retroarch_key": "input_exit_emulator_btn",
+      "btn_index": "3",
+      "requires_hotkey": true,
+      "consensus": "VOLLEDIG - Beide standaarden gebruiken SELECT + START om af te sluiten.",
+      "description": "Sluit de huidige content/ROM en keer terug naar het hoofdmenu.",
+      "notes": "START = index 3. Met quit_press_twice = false geen bevestigingsscherm."
+    },
+    "fps_toggle": {
+      "button": "SELECT + Y",
+      "retroarch_key": "input_fps_toggle_btn",
+      "btn_index": "0",
+      "requires_hotkey": true,
+      "consensus": "EMUFLOW KEUZE - RGC: SELECT+Y = FPS. TechDweeb: SELECT+Y = Screenshot. EmuFlow kiest FPS toggle als primair, screenshot via Quick Menu.",
+      "emuflow_choice_reason": "FPS toggle is nuttig voor performance monitoring. Screenshot is via het Quick Menu beschikbaar.",
+      "description": "Toon/verberg de FPS teller op het scherm.",
+      "notes": "Y = index 0. Screenshot is beschikbaar in Quick Menu > Screenshot."
+    },
+    "reset_game": {
+      "button": "SELECT + B",
+      "retroarch_key": "input_reset_btn",
+      "btn_index": "1",
+      "requires_hotkey": true,
+      "consensus": "RGC STANDAARD - TechDweeb specificeert geen reset binding. RGC gebruikt SELECT+B.",
+      "description": "Reset het huidige spel (soft reset).",
+      "notes": "B = index 1."
+    },
+    "volume_up": {
+      "button": "SELECT + D-pad Up",
+      "retroarch_key": "input_volume_up_axis",
+      "axis": "-1",
+      "requires_hotkey": true,
+      "consensus": "EMUFLOW KEUZE - RGC: D-pad Right = Volume Up. TechDweeb: D-pad Up = Volume Up. EmuFlow kiest TechDweeb's Up/Down voor volume omdat dit intuïtiever is (omhoog = luider).",
+      "emuflow_choice_reason": "D-pad Up/Down voor volume is meer intuïtief dan Right/Left.",
+      "description": "Verhoog het volume. D-pad Omhoog = luider.",
+      "notes": "D-pad Up = negatieve Y-as (-1)."
+    },
+    "volume_down": {
+      "button": "SELECT + D-pad Down",
+      "retroarch_key": "input_volume_down_axis",
+      "axis": "+1",
+      "requires_hotkey": true,
+      "consensus": "EMUFLOW KEUZE - TechDweeb keuze overgenomen voor intuïtieve Up/Down volume mapping.",
+      "description": "Verlaag het volume. D-pad Omlaag = stiller.",
+      "notes": "D-pad Down = positieve Y-as (+1)."
+    },
+    "next_save_slot": {
+      "button": "SELECT + D-pad Right",
+      "retroarch_key": "input_state_slot_increase",
+      "axis": "+0",
+      "requires_hotkey": true,
+      "consensus": "EMUFLOW KEUZE - TechDweeb: D-pad Right = Next Slot. RGC gebruikt Right voor Volume. EmuFlow kiest TechDweeb's saveslot-op-dpad mapping, met volume op Up/Down.",
+      "description": "Ga naar de volgende saveslot.",
+      "notes": "D-pad Right = positieve X-as (+0)."
+    },
+    "previous_save_slot": {
+      "button": "SELECT + D-pad Left",
+      "retroarch_key": "input_state_slot_decrease",
+      "axis": "-0",
+      "requires_hotkey": true,
+      "consensus": "EMUFLOW KEUZE - TechDweeb keuze overgenomen.",
+      "description": "Ga naar de vorige saveslot.",
+      "notes": "D-pad Left = negatieve X-as (-0)."
+    },
+    "run_ahead_toggle": {
+      "button": "SELECT + D-pad Up (alt: via Quick Menu)",
+      "description": "Run-Ahead toggle. Primair beschikbaar via Quick Menu > Opties. Direct binding optioneel.",
+      "consensus": "RGC STANDAARD - TechDweeb specificeert geen run-ahead binding.",
+      "notes": "Aanbevolen: configureer Run-Ahead per-core via Quick Menu in plaats van als globale hotkey."
+    }
+  },
+  "recommended_settings": {
+    "auto_save": {
+      "key": "savestate_auto_save",
+      "value": true,
+      "retroarch_cfg": "savestate_auto_save = \"true\"",
+      "consensus": "VOLLEDIG - Beide standaarden bevelen auto save aan.",
+      "description": "Automatisch opslaan bij verlaten van content."
+    },
+    "auto_load": {
+      "key": "savestate_auto_load",
+      "value": true,
+      "retroarch_cfg": "savestate_auto_load = \"true\"",
+      "consensus": "VOLLEDIG - Beide standaarden bevelen auto load aan.",
+      "description": "Automatisch laden bij openen van content."
+    },
+    "confirm_quit": {
+      "key": "quit_press_twice",
+      "value": false,
+      "retroarch_cfg": "quit_press_twice = \"false\"",
+      "consensus": "VOLLEDIG - Beide standaarden: Confirm Quit UIT.",
+      "description": "Geen bevestigingsvenster bij afsluiten."
+    },
+    "overlay_hide_with_controller": {
+      "key": "input_overlay_hide_in_menu",
+      "value": true,
+      "retroarch_cfg": "input_overlay_hide_in_menu = \"true\"",
+      "consensus": "RGC STANDAARD - TechDweeb impliceert dit maar specificeert het niet expliciet.",
+      "description": "Verberg touchscreen overlay bij gebruik van fysieke controller."
+    },
+    "input_block_timeout": {
+      "key": "input_block_timeout",
+      "value": 1,
+      "retroarch_cfg": "input_block_timeout = \"1\"",
+      "platform": "Android",
+      "consensus": "TECHDWEEB STANDAARD - Android-specifieke optimalisatie overgenomen van TechDweeb.",
+      "description": "Android: blokkeer invoer 1 frame na menu-opening om ongewenste input te voorkomen."
+    },
+    "analog_to_digital": {
+      "key": "input_analog_dpad_mode",
+      "value": 1,
+      "retroarch_cfg": "input_analog_dpad_mode = \"1\"",
+      "consensus": "TECHDWEEB STANDAARD - Left Analog als D-pad emulatie overgenomen van TechDweeb.",
+      "description": "Linker analoge stick emuleert ook D-pad invoer."
+    },
+    "menu_toggle_gamepad_combo": {
+      "key": "input_menu_toggle_gamepad_combo",
+      "value": 4,
+      "retroarch_cfg": "input_menu_toggle_gamepad_combo = \"4\"",
+      "consensus": "TECHDWEEB STANDAARD - L3+R3 backup combo overgenomen van TechDweeb.",
+      "description": "L3+R3 als backup menu toggle combo."
+    },
+    "rewind_globally": {
+      "key": "rewind_enable",
+      "value": false,
+      "retroarch_cfg": "rewind_enable = \"false\"",
+      "consensus": "RGC STANDAARD - Rewind standaard UIT wegens prestatieimpact.",
+      "description": "Rewind standaard UIT. Inschakelen per-core indien gewenst voor lichte systemen."
+    }
+  },
+  "conflict_resolution": {
+    "summary": "Conflicten tussen RGC en TechDweeb en hoe EmuFlow ze oplost",
+    "conflicts": [
+      {
+        "function": "Menu Toggle",
+        "rgc": "X knop (index 2)",
+        "techdweeb": "A knop (index 1)",
+        "emuflow_choice": "X knop (RGC)",
+        "reason": "X conflicteert minder met games dan A. TechDweeb's L3+R3 backup wordt ook opgenomen."
+      },
+      {
+        "function": "SELECT + L2",
+        "rgc": "Rewind",
+        "techdweeb": "Slow Motion",
+        "emuflow_choice": "Rewind (RGC)",
+        "reason": "Rewind is functioneel nuttiger. Slow motion is via Quick Menu toegankelijk."
+      },
+      {
+        "function": "SELECT + Y",
+        "rgc": "FPS Toggle",
+        "techdweeb": "Screenshot",
+        "emuflow_choice": "FPS Toggle (RGC)",
+        "reason": "FPS toggle is nuttig voor performance monitoring. Screenshot via Quick Menu."
+      },
+      {
+        "function": "D-pad Right/Left",
+        "rgc": "Volume Up/Down",
+        "techdweeb": "Next/Previous Save Slot",
+        "emuflow_choice": "Save Slot (TechDweeb voor Right/Left) + Volume op Up/Down (TechDweeb)",
+        "reason": "Volume op Up/Down is intuïtiever. Save slot op Right/Left is logisch (navigatie)."
+      }
+    ]
+  },
+  "notes": [
+    "EmuFlow Default combineert de beste aspecten van RGC en TechDweeb met focus op intuïtiviteit en brede compatibiliteit.",
+    "SELECT is de universele hotkey enable - nooit veranderen tenzij het apparaat een dedicated hotkey knop heeft.",
+    "X als menu toggle (niet A) voorkomt conflicten met de meest gebruikte knop in retro games (A/B systemen).",
+    "L3+R3 als backup combo werkt altijd, ook als de hotkey enable bindingen anders zijn geconfigureerd.",
+    "Volume op D-pad Up/Down is intuïtiever dan Right/Left: omhoog = luider, omlaag = stiller.",
+    "Save Slot op D-pad Right/Left: intuïtief want navigeer door slots zoals door een menu.",
+    "Rewind standaard UIT: activeer alleen voor lichte systemen (NES/SNES/GBA/GBC).",
+    "Auto Save/Load AAN: voorkomt dataverlies bij onverwacht afsluiten.",
+    "input_block_timeout = 1: altijd instellen op Android voor betere menu-ervaring.",
+    "Alle configuraties zijn getest en compatibel met RetroArch 1.17.0 en hoger."
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "metadata": {
+    "name": "EmuFlow DraStic NDS Controller Configuratie",
+    "emulator": "DraStic DS Emulator",
+    "platform": "Android Handheld",
+    "version": "1.0.0",
+    "description": "DraStic Nintendo DS controller configuratie voor Android handheld apparaten met fysieke gamepad. DraStic gebruikt geen standaard .cfg bestand, daarom is JSON formaat gebruikt voor leesbaarheid en EmuFlow-integratie.",
+    "layout": "Landscape 1:1",
+    "emuflow_profile_id": "drastic_android_handheld"
+  },
+  "screen_layout": {
+    "orientation": "Landscape",
+    "mode": "Landscape 1:1",
+    "description": "Beide DS schermen naast elkaar weergegeven in landscape modus, elk op 1:1 schaalverhouding. Optimaal voor Android handheld 16:9 schermen.",
+    "top_screen_position": "left",
+    "bottom_screen_position": "right",
+    "screen_gap": 4,
+    "screen_swap_default": false
+  },
+  "button_mappings": {
+    "description": "Standaard Android gamepad → Nintendo DS knop mapping",
+    "android_to_nds": {
+      "A": {
+        "android_button": "A",
+        "android_keycode": 96,
+        "nds_button": "A",
+        "description": "DS A knop (rechts face button). Standaard actie/bevestiging."
+      },
+      "B": {
+        "android_button": "B",
+        "android_keycode": 97,
+        "nds_button": "B",
+        "description": "DS B knop (onder face button). Standaard terug/annuleren."
+      },
+      "X": {
+        "android_button": "X",
+        "android_keycode": 99,
+        "nds_button": "X",
+        "description": "DS X knop (links face button). Extra actieknop."
+      },
+      "Y": {
+        "android_button": "Y",
+        "android_keycode": 100,
+        "nds_button": "Y",
+        "description": "DS Y knop (boven face button). Extra actieknop."
+      },
+      "L1": {
+        "android_button": "L1",
+        "android_keycode": 102,
+        "nds_button": "L",
+        "description": "DS L schouderknop (linker trigger)."
+      },
+      "R1": {
+        "android_button": "R1",
+        "android_keycode": 103,
+        "nds_button": "R",
+        "description": "DS R schouderknop (rechter trigger)."
+      },
+      "START": {
+        "android_button": "START",
+        "android_keycode": 109,
+        "nds_button": "Start",
+        "description": "DS Start knop (systeem/pauze)."
+      },
+      "SELECT": {
+        "android_button": "SELECT",
+        "android_keycode": 108,
+        "nds_button": "Select",
+        "description": "DS Select knop (systeem/opties)."
+      },
+      "DPAD_UP": {
+        "android_button": "D-pad Up",
+        "android_keycode": 19,
+        "nds_button": "D-pad Up",
+        "description": "DS D-pad Omhoog."
+      },
+      "DPAD_DOWN": {
+        "android_button": "D-pad Down",
+        "android_keycode": 20,
+        "nds_button": "D-pad Down",
+        "description": "DS D-pad Omlaag."
+      },
+      "DPAD_LEFT": {
+        "android_button": "D-pad Left",
+        "android_keycode": 21,
+        "nds_button": "D-pad Left",
+        "description": "DS D-pad Links."
+      },
+      "DPAD_RIGHT": {
+        "android_button": "D-pad Right",
+        "android_keycode": 22,
+        "nds_button": "D-pad Right",
+        "description": "DS D-pad Rechts."
+      }
+    }
+  },
+  "special_mappings": {
+    "description": "Speciale functies gemapped op L2/R2 triggers en sticks. DraStic specifieke functies voor screen management en emulatiebediening.",
+    "L2_screen_swap": {
+      "android_button": "L2",
+      "android_keycode": 106,
+      "function": "Screen Swap",
+      "description": "Wissel de positie van het boven- en onderscherm. Handig voor games waarbij het touch-scherm het primaire scherm is (bv. Zelda: Phantom Hourglass). Één druk wisselt permanent; houd ingedrukt voor tijdelijk wisselen.",
+      "mode": "toggle"
+    },
+    "R2_open_menu": {
+      "android_button": "R2",
+      "android_keycode": 107,
+      "function": "Open DraStic Menu",
+      "description": "Opent het DraStic emulatiemenu voor toegang tot savestates, instellingen, cheat codes en andere opties.",
+      "mode": "press"
+    },
+    "R3_pointer_down": {
+      "android_button": "R3",
+      "android_keycode": 318,
+      "function": "Pointer Down (Touch Simulatie)",
+      "description": "Simuleert een aanraking op het DS touch screen op de huidige pointer positie. Wordt gebruikt in combinatie met Right Stick Pointer Mode om het touch screen te bedienen met de analoge stick.",
+      "mode": "press",
+      "requires": "right_stick_pointer_mode"
+    },
+    "right_stick_pointer_mode": {
+      "android_input": "Right Stick (Axis 2/3)",
+      "function": "Pointer Mode",
+      "description": "Rechter analoge stick beweegt de pointer (cursor) op het DS touch screen. Gebruik R3 (stick klik) om een aanraking te simuleren op de huidige pointer positie. Essentieel voor touch-gebaseerde games zonder touchscreen toegang.",
+      "x_axis": "Axis 2",
+      "y_axis": "Axis 3",
+      "sensitivity": 1.5,
+      "deadzone": 0.15
+    }
+  },
+  "savestate_settings": {
+    "description": "DraStic savestate configuratie",
+    "auto_save_on_exit": true,
+    "auto_load_on_start": true,
+    "savestate_slots": 10,
+    "quick_save_slot": 0,
+    "notes": "DraStic ondersteunt tot 10 saveslots per game. Quick save/load via menu of sneltoets."
+  },
+  "display_settings": {
+    "description": "Schermweergave instellingen voor DraStic",
+    "landscape_layout": "Landscape 1:1",
+    "screen_filter": "None",
+    "screen_scaling": "Aspect Correct",
+    "show_fps": false,
+    "threaded_rendering": true,
+    "resolution_width": 0,
+    "resolution_height": 0,
+    "notes": "Resolution 0x0 = native schermresolutie. DraStic schaalt automatisch naar het beschikbare schermoppervlak."
+  },
+  "audio_settings": {
+    "description": "Audio configuratie voor DraStic",
+    "enable_sound": true,
+    "enable_microphone": false,
+    "audio_latency": "default",
+    "notes": "Microphone uitschakelen tenzij specifiek nodig (sommige games gebruiken microfoon input)."
+  },
+  "performance_settings": {
+    "description": "Prestatie-instellingen voor DraStic",
+    "frameskip": 0,
+    "enable_3d_threads": 1,
+    "enable_cpu_boost": false,
+    "notes": "Frameskip 0 = geen frames overslaan. Verhoog naar 1-2 bij prestatieproblemen. CPU Boost: gebruik voorzichtig, kan batterij versneld legen."
+  },
+  "notes": [
+    "DraStic heeft geen standaard .cfg bestandsformaat - instellingen worden intern opgeslagen in de app.",
+    "Dit JSON bestand dient als configuratiereferentie en wordt door EmuFlow gebruikt om DraStic te configureren via de beschikbare API.",
+    "Screen Swap (L2) is essentieel voor games zoals Zelda: Phantom Hourglass en Spirit Tracks waarbij het touch scherm de kaart toont.",
+    "Right Stick Pointer Mode maakt het mogelijk om DS touch games te spelen zonder het touchscreen aan te raken.",
+    "R3 als Pointer Down is de meest ergonomische keuze - druk de stick in om een touch te simuleren.",
+    "DraStic landscape 1:1 layout: beide schermen zijn even groot naast elkaar, waarvoor een breed (16:9 of breder) scherm nodig is.",
+    "Auto save/load aan: beschermt tegen dataverlies. DS games slagen intern op (SRAM), DraStic beheert dit automatisch."
+  ]
+}

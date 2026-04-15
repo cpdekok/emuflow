@@ -1,0 +1,150 @@
+name: EmuFlow CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Backend Tests ────────────────────────────────────────────────────────
+  backend-tests:
+    name: Backend Tests (Python)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: emuflow_test
+          POSTGRES_USER: emuflow
+          POSTGRES_PASSWORD: testpass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Run unit tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://emuflow:testpass@localhost:5432/emuflow_test
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: test
+          OPENAI_API_KEY: sk-test-dummy
+        run: |
+          cd backend
+          pytest tests/unit -v --cov=. --cov-report=xml
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://emuflow:testpass@localhost:5432/emuflow_test
+          REDIS_URL: redis://localhost:6379/0
+          APP_ENV: test
+        run: |
+          cd backend
+          pytest tests/integration -v
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: backend/coverage.xml
+          flags: backend
+
+  # ── Config Validatie ──────────────────────────────────────────────────────
+  config-validation:
+    name: Validate Config Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate JSON configs
+        run: |
+          python scripts/validate_configs.py
+
+      - name: Validate BIOS hash database
+        run: |
+          python scripts/validate_bios_db.py
+
+      - name: Validate controller profiles
+        run: |
+          python scripts/validate_controller_profiles.py
+
+  # ── Emulator Update Check ─────────────────────────────────────────────────
+  emulator-update-check:
+    name: Check Emulator Updates
+    runs-on: ubuntu-latest
+    # Wekelijks draaien (elke maandag 08:00 UTC)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Check for emulator updates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/check_emulator_updates.py
+
+      - name: Create issue if updates found
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('update_report.json')) {
+              const report = JSON.parse(fs.readFileSync('update_report.json'));
+              if (report.updates_found.length > 0) {
+                await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: `[Auto] Emulator updates beschikbaar (${new Date().toISOString().split('T')[0]})`,
+                  body: report.summary,
+                  labels: ['emulator-update', 'automated']
+                });
+              }
+            }
+
+# Wekelijkse scheduled run
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
