@@ -1,0 +1,42 @@
+name: "Feature Request"
+description: "Nieuwe functionaliteit voorstellen"
+labels: ["type: feature", "priority: medium"]
+body:
+  - type: markdown
+    attributes:
+      value: "## Nieuwe Feature"
+  - type: textarea
+    id: description
+    attributes:
+      label: "Beschrijving"
+      description: "Wat moet de feature doen?"
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: "Module"
+      options:
+        - Backend (FastAPI)
+        - Android Agent (Kotlin)
+        - Frontend (Next.js)
+        - Config / Controller Profiles
+        - AI Support
+        - Overig
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: "Use Case"
+      description: "Waarom is dit nodig? Welk probleem lost het op?"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Acceptance Criteria"
+      description: "Wanneer is de feature 'klaar'?"
+      placeholder: |
+        - [ ] Criterium 1
+        - [ ] Criterium 2

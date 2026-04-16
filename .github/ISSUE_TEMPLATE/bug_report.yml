@@ -1,0 +1,52 @@
+name: "Bug Report"
+description: "Een bug melden"
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "## Bug Report"
+  - type: textarea
+    id: description
+    attributes:
+      label: "Beschrijving"
+      description: "Wat gaat er mis?"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: "Apparaat"
+      description: "Welk apparaat en Android versie?"
+      placeholder: "bijv. Retroid Pocket 4 Pro, Android 13"
+  - type: dropdown
+    id: module
+    attributes:
+      label: "Module"
+      options:
+        - Backend (FastAPI)
+        - Android Agent (Kotlin)
+        - Frontend (Next.js)
+        - Config / Controller Profiles
+        - AI Support
+        - Overig
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Stappen om te reproduceren"
+      value: |
+        1. Ga naar...
+        2. Klik op...
+        3. Zie fout...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Verwacht gedrag"
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs / Screenshots"
+      description: "Plak foutmeldingen of screenshots"
