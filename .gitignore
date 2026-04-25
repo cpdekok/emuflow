@@ -76,3 +76,4 @@ ROMs/
 *.nsp
 *.xci
 *.cia
+.vercel
