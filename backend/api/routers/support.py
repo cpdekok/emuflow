@@ -12,12 +12,12 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from ...services.ai_support.knowledge_base import (
+from services.ai_support.knowledge_base import (
     EMULATOR_FAQS,
     HOTKEY_HELP,
     KnowledgeBase,
 )
-from ...services.ai_support.support_agent import EmuFlowSupportAgent
+from services.ai_support.support_agent import EmuFlowSupportAgent
 
 logger = logging.getLogger(__name__)
 
