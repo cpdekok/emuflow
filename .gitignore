@@ -66,6 +66,7 @@ emuflow_update_cache.json
 *.bin
 *.bios
 bios/
+!backend/core/bios/
 BIOS/
 
 # ROM bestanden — NOOIT in versiecontrole
