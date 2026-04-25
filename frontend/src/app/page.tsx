@@ -19,7 +19,7 @@ export default function DashboardPage() {
           EmuFlow Dashboard
         </h1>
         <p className="text-slate-400 mt-1 text-sm">
-          Beheer je emulatie-setup vanuit één plek.
+          Beheer je emulatie-setup vanuit één plek — automatisch gedeployed via GitHub.
         </p>
       </div>
 
