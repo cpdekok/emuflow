@@ -298,6 +298,47 @@ python scripts/check_emulator_updates.py
 
 ---
 
+## Device Telemetry
+
+De Android agent stuurt een **anonieme heartbeat** naar de backend. Devices worden
+geïdentificeerd via een `hardware_fingerprint` (SHA-256 over stabiele HW-bits) — er
+worden geen IMEI's, accounts of e-mailadressen verstuurd.
+
+**Endpoints (`/devices`)**
+
+| Method | Path                       | Description                                       |
+| ------ | -------------------------- | ------------------------------------------------- |
+| `POST` | `/devices/heartbeat`       | Upsert device + emulators, log heartbeat (60/min) |
+| `POST` | `/devices/{id}/events`     | Log een event (`install_started`, `launch`, …)    |
+| `GET`  | `/devices`                 | Lijst devices met `online` flag (<5 min)          |
+| `GET`  | `/devices/{id}`            | Detail + recent 50 events + installed emulators   |
+| `GET`  | `/devices/{id}/events`     | Paginated events (`?limit=&offset=&type=`)        |
+| `GET`  | `/devices/{id}/profile`    | Hardware-tier + emulator recommendations          |
+| `POST` | `/devices/register`        | **Deprecated** — gebruik `/heartbeat`             |
+
+Voorbeeld:
+
+```bash
+curl -X POST https://backend-production-05dd.up.railway.app/devices/heartbeat \
+  -H "Content-Type: application/json" \
+  -H "X-Agent-Version: 0.2.0" \
+  -d '{
+    "hardware_fingerprint": "fp-aaaaaaaaaaaaaaaaaaaaaaaa",
+    "device_name": "Pixel 7",
+    "chipset": "Google Tensor G2",
+    "android_api": 33,
+    "ram_gb": 8.0,
+    "shizuku_available": true,
+    "agent_version": "0.2.0",
+    "installed_emulators": []
+  }'
+```
+
+Zie [`backend/README.md`](backend/README.md) voor de volledige API-documentatie en
+lokale setup-instructies.
+
+---
+
 ## AI Customer Support
 
 EmuFlow heeft een ingebouwde support-agent gebaseerd op de kennisbanken van Retro Game Corps en TechDweeb.
