@@ -114,4 +114,45 @@ object EmulatorSavePathRegistry {
             "$externalStorageRoot/$relativePath"
         }.distinct()
     }
+
+    /**
+     * Top-level roots om recursief te monitoren (één per emulator).
+     *
+     * Dit is een geoptimaliseerde variant van [allMonitoredDirs]: in plaats van
+     * elke save- en state-directory afzonderlijk te observeren, monitoren we de
+     * gemeenschappelijke parent zodat één RecursiveFileObserver beide subtrees dekt.
+     *
+     * @param externalStorageRoot Absolute pad naar externe opslag
+     * @return Lijst van absolute paden, gededupliceerd
+     */
+    fun allMonitoredRoots(externalStorageRoot: String): List<String> {
+        return entries.flatMap { emulator ->
+            (emulator.saveDirs + emulator.stateDirs).map { relPath ->
+                // Gemeenschappelijke parent: bijv. "PSP" voor PSP/SAVEDATA + PSP/PPSSPP_STATE
+                relPath.substringBefore('/')
+                    .let { topLevel ->
+                        if (topLevel.startsWith("Android")) {
+                            // Android/data/<pkg> als gezamenlijke root
+                            relPath.split('/').take(3).joinToString("/")
+                        } else {
+                            topLevel
+                        }
+                    }
+            }
+        }.distinct().map { rel -> "$externalStorageRoot/$rel" }
+    }
+
+    /**
+     * Bepaal welke emulator-package een gegeven absoluut bestandspad toebehoort.
+     *
+     * @param absolutePath Absoluut pad naar een save-bestand
+     * @param externalStorageRoot Externe opslag root, om te strippen
+     * @return Package-naam of null als geen match
+     */
+    fun matchPackage(absolutePath: String, externalStorageRoot: String): String? {
+        val rel = absolutePath.removePrefix("$externalStorageRoot/")
+        return entries.firstOrNull { entry ->
+            (entry.saveDirs + entry.stateDirs).any { dir -> rel.startsWith(dir) }
+        }?.packageName
+    }
 }

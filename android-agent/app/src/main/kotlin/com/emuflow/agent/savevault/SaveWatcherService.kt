@@ -18,23 +18,36 @@ private const val NOTIFICATION_CHANNEL_ID = "emuflow_save_watcher"
 private const val NOTIFICATION_ID = 1002
 
 /**
- * SaveWatcherService — foreground service die save-directories monitort via FileObserver.
+ * SaveWatcherService — foreground service die save-directories recursief monitort.
  *
- * Fase 1 STUB: FileObserver-instanties worden aangemaakt maar de save-kopie-logica
- * roept VaultManager aan. De service start maar doet nog geen actieve backup
- * totdat MANAGE_EXTERNAL_STORAGE permissie is verleend.
+ * Pipeline:
+ *   RecursiveFileObserver → SaveDebouncer → CorruptionGuard → VaultManager.backupSaveFile
  *
- * Open vraag (doc 11): Werkt FileObserver betrouwbaar op Android 14/15 met
- * scoped storage beperkingen? Dit wordt gevalideerd bij eerste device-test.
+ * Stappen per event:
+ * 1. RecursiveFileObserver vangt CLOSE_WRITE/MOVED_TO op vanuit alle subdirs.
+ * 2. SaveDebouncer wacht 750ms na laatste event om bursts te clusteren.
+ * 3. CorruptionGuard weert zero-byte / lock / drastisch gekrompen bestanden.
+ * 4. VaultManager kopieert naar /sdcard/EmuFlow_Vault/<package>/<hash>/<file>/<timestamp>.<ext>
+ *    en hashet met SHA256.
  *
- * Permissie-vereiste: MANAGE_EXTERNAL_STORAGE (via PermissionBundleManager)
- * voor toegang tot /sdcard/ en Android/data/ paden.
+ * Permissie-vereiste: MANAGE_EXTERNAL_STORAGE (via PermissionBundleManager) voor
+ * /sdcard/-toegang. Als niet verleend, start de service maar registreert geen watches
+ * (de directories zijn dan onleesbaar).
+ *
+ * Doc-referentie: blueprint 11-savestates-vault.md
  */
 class SaveWatcherService : Service() {
 
-    /** Lijst van actieve FileObservers — één per gemonitorde directory. */
-    private val observers: MutableList<FileObserver> = mutableListOf()
+    private val recursiveObservers: MutableList<RecursiveFileObserver> = mutableListOf()
     private lateinit var vaultManager: VaultManager
+    private lateinit var debouncer: SaveDebouncer
+    private val corruptionGuard = CorruptionGuard()
+
+    /**
+     * Cache van laatste-goede-grootte per save-bestand (voor corruption-detectie).
+     * Niet gepersisteerd — wordt opnieuw opgebouwd bij service-start.
+     */
+    private val lastGoodSize: MutableMap<String, Long> = mutableMapOf()
 
     override fun onCreate() {
         super.onCreate()
@@ -44,97 +57,105 @@ class SaveWatcherService : Service() {
 
         val externalRoot = Environment.getExternalStorageDirectory().absolutePath
         vaultManager = VaultManager(externalRoot)
+        debouncer = SaveDebouncer { file -> processSettledFile(file, externalRoot) }
 
         startWatching(externalRoot)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         super.onDestroy()
+        debouncer.shutdown()
         stopAllObservers()
         Log.i(TAG, "SaveWatcherService gestopt")
     }
 
     /**
-     * Start FileObserver-instanties voor alle bekende emulator-save-directories.
+     * Start recursive observers voor alle bekende emulator-save-roots.
      *
-     * Op API 29+ is de RecursiveFileObserver-aanpak nodig — de enkelvoudige
-     * FileObserver monitort alleen de top-level directory zonder subdirectories.
-     *
-     * @param externalStorageRoot Absolute pad naar externe opslag
+     * Een RecursiveFileObserver per emulator zodat we in logs zien welke watches
+     * actief zijn én zodat een falende emulator-tree niet alle andere afbreekt.
      */
     private fun startWatching(externalStorageRoot: String) {
-        val dirsToWatch = EmulatorSavePathRegistry.allMonitoredDirs(externalStorageRoot)
+        val rootsToWatch = EmulatorSavePathRegistry.allMonitoredRoots(externalStorageRoot)
 
-        for (dirPath in dirsToWatch) {
-            val dir = File(dirPath)
+        for (root in rootsToWatch) {
+            val dir = File(root)
             if (!dir.exists()) {
-                Log.d(TAG, "Directory bestaat niet (nog niet aangemaakt): $dirPath")
-                continue // Niet foutief — emulator is nog niet geïnstalleerd/gestart
+                Log.d(TAG, "Root bestaat niet (emulator nog niet gestart?): $root")
+                continue
             }
 
-            val emulatorPackage = EmulatorSavePathRegistry.entries
-                .firstOrNull { entry ->
-                    (entry.saveDirs + entry.stateDirs).any { relPath ->
-                        dirPath.contains(relPath)
-                    }
-                }?.packageName ?: "unknown"
-
-            @Suppress("DEPRECATION")
-            val observer = createFileObserver(dir, emulatorPackage)
+            val observer = RecursiveFileObserver(root) { event, fullPath, fileName ->
+                handleObserverEvent(event, fullPath, fileName)
+            }
             observer.startWatching()
-            observers.add(observer)
-            Log.d(TAG, "FileObserver gestart voor: $dirPath (emulator: $emulatorPackage)")
+            recursiveObservers.add(observer)
+            Log.d(TAG, "Recursive watcher gestart op $root (${observer.activeWatchCount()} watches)")
         }
 
-        Log.i(TAG, "${observers.size} FileObserver(s) actief")
+        val totalWatches = recursiveObservers.sumOf { it.activeWatchCount() }
+        Log.i(TAG, "${recursiveObservers.size} recursive observers actief, $totalWatches watches totaal")
     }
 
     /**
-     * Maakt een FileObserver aan voor een directory.
+     * Verwerk een ruw event uit de RecursiveFileObserver.
      *
-     * Events:
-     * - CLOSE_WRITE: bestand is klaar met schrijven (veilig moment om te kopiëren)
-     * - MOVED_TO: bestand is verplaatst naar directory (atomisch opslaan)
-     *
-     * @param dir Te monitoren directory
-     * @param emulatorPackage Bijbehorende emulator voor vault-structuur
+     * Alleen CLOSE_WRITE en MOVED_TO triggeren de debouncer — de overige events
+     * (CREATE/DELETE_SELF/MOVE_SELF) zijn al door de observer zelf afgehandeld
+     * voor het beheren van child-watches.
      */
-    private fun createFileObserver(dir: File, emulatorPackage: String): FileObserver {
-        val watchMask = FileObserver.CLOSE_WRITE or FileObserver.MOVED_TO
+    private fun handleObserverEvent(event: Int, fullPath: String, fileName: String) {
+        val isWriteEvent = (event and FileObserver.CLOSE_WRITE) != 0 ||
+            (event and FileObserver.MOVED_TO) != 0
+        if (!isWriteEvent) return
 
-        return object : FileObserver(dir, watchMask) {
-            override fun onEvent(event: Int, path: String?) {
-                if (path == null) return
+        val file = File(fullPath)
+        if (!file.isFile) return
 
-                val saveFile = File(dir, path)
-                Log.d(TAG, "File-event gedetecteerd: event=$event, bestand=${saveFile.name}, emulator=$emulatorPackage")
+        debouncer.submit(file)
+    }
 
-                // Voer backup uit op background thread — FileObserver-callback is op main thread
-                Thread {
-                    val vaultFile = vaultManager.backupSaveFile(saveFile, emulatorPackage)
-                    if (vaultFile != null) {
-                        Log.i(TAG, "Save-backup succesvol: ${saveFile.name} → ${vaultFile.absolutePath}")
-                    }
-                }.start()
+    /**
+     * Wordt aangeroepen door de debouncer wanneer een bestand "settled" is.
+     * Voert corruptie-check + backup uit.
+     */
+    private fun processSettledFile(file: File, externalRoot: String) {
+        val emulatorPackage = EmulatorSavePathRegistry.matchPackage(file.absolutePath, externalRoot)
+            ?: "unknown"
+
+        val previousSize = lastGoodSize[file.absolutePath]
+        val verdict = corruptionGuard.assess(file, previousSize)
+
+        when (verdict) {
+            CorruptionGuard.Verdict.REJECT -> {
+                Log.d(TAG, "Backup overgeslagen (REJECT): ${file.name}")
+                return
+            }
+            CorruptionGuard.Verdict.SUSPICIOUS -> {
+                Log.w(TAG, "Backup wordt opgeslagen als SUSPICIOUS: ${file.name}")
+                // Fase 1: we accepteren de backup wel, maar markeren in log.
+                // Fase 2: aparte vault-tak voor suspicious + waarschuwing in restore-UI.
+            }
+            CorruptionGuard.Verdict.OK -> {
+                lastGoodSize[file.absolutePath] = file.length()
             }
         }
+
+        val vaultFile = vaultManager.backupSaveFile(file, emulatorPackage)
+        if (vaultFile != null) {
+            Log.i(TAG, "Save-backup ok: ${file.name} → ${vaultFile.absolutePath}")
+        }
     }
 
-    /**
-     * Stopt alle actieve FileObservers en verwijdert ze uit de lijst.
-     */
     private fun stopAllObservers() {
-        for (observer in observers) {
+        for (observer in recursiveObservers) {
             observer.stopWatching()
         }
-        observers.clear()
-        Log.d(TAG, "Alle FileObservers gestopt")
+        recursiveObservers.clear()
     }
 
     private fun createNotificationChannel() {
