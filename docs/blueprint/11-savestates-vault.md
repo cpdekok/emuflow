@@ -186,8 +186,32 @@ Save Vault v0 (lokaal, automatisch) blijft gratis — lock-in haak voor adoptie.
 - When laatst-gespeelde game bekend is
 - Then emulator opent direct met die game zonder verdere keuzes
 
+## Implementatie-architectuur (fase 1)
+
+De Save-Vault pipeline in de Android Agent bestaat uit vier lagen:
+
+```
+RecursiveFileObserver  →  SaveDebouncer  →  CorruptionGuard  →  VaultManager
+     (events)            (clustering)      (filtering)        (copy + hash)
+```
+
+1. **RecursiveFileObserver** — wrapper rond `android.os.FileObserver` die ook subdirectories monitort. Op API 29+ moet recursive monitoring expliciet gebouwd worden door per subdir een observer te registreren. Nieuwe directories worden dynamisch toegevoegd via CREATE-events; verwijderde directories triggeren automatische deregistratie.
+
+2. **SaveDebouncer** — emulators schrijven save-bestanden vaak in bursts (tijdelijk bestand, rename, meta-bestand). Per write een vault-kopie maken explodeert de buffer. De debouncer wacht 750 ms na het laatste event op hetzelfde pad voordat hij de pipeline doorzet, met een hard maximum van 5 s om constant-schrijvende swap-bestanden niet eeuwig te blokkeren.
+
+3. **CorruptionGuard** — conservatieve heuristiek om onbruikbare backups te weren:
+   - REJECT: zero-byte, < 16 bytes, of bekende temp/lock-extensies (`.tmp`, `.part`, `.swp`, `.lock`)
+   - SUSPICIOUS: nieuwe versie < 25 % van laatste goede versie (drastische krimp)
+   - OK: anders
+   SUSPICIOUS-saves worden in fase 1 wel opgeslagen maar gemarkeerd; in fase 2 krijgen ze een aparte vault-tak en worden ze niet als default-restore aangeboden.
+
+4. **VaultManager** — kopieert naar de rolling buffer, hashet met SHA256, prunet naar `MAX_VERSIONS_PER_SLOT` versies en levert telemetrie-statistieken aan voor heartbeat.
+
+Elke laag is een aparte klasse in `com.emuflow.agent.savevault` zodat ze afzonderlijk te testen zijn (unit-tests komen in fase 2 met JUnit + Robolectric).
+
 ## Open vragen
 
-- Werkt FileObserver betrouwbaar op Android 14/15 met scoped storage-beperkingen?
-- Hoe omgaan met emulators die saves naar `Android/data/<package>/` schrijven (vereist Shizuku of MANAGE_EXTERNAL_STORAGE)?
+- Werkt FileObserver betrouwbaar op Android 14/15 met scoped storage-beperkingen? — *RecursiveFileObserver toegevoegd; te valideren op eerste device-test*
+- Hoe omgaan met emulators die saves naar `Android/data/<package>/` schrijven (vereist Shizuku of MANAGE_EXTERNAL_STORAGE)? — *MANAGE_EXTERNAL_STORAGE is bundle-default; Shizuku-fallback in fase 2*
 - Vault op interne opslag of microSD: gebruiker-keuze of auto-detectie van vrije ruimte?
+- inotify watch-limiet (typisch 8192 per process op Android) — huidige observer logt waarschuwing boven 4000 watches; te monitoren bij eerste device-test
