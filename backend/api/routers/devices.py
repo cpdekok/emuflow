@@ -8,6 +8,7 @@ Endpoints
 ---------
 - ``POST /devices/heartbeat``                 — anonymous upsert + emulator
                                                 inventory + heartbeat event.
+- ``POST /devices/crash-events``              — ingest a crash event from agent.
 - ``POST /devices/{device_id}/events``        — log an arbitrary event.
 - ``GET  /devices``                           — list devices with online flag.
 - ``GET  /devices/{device_id}``               — detail + recent events +
@@ -25,7 +26,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy import select
@@ -34,7 +35,7 @@ from sqlalchemy.orm import selectinload
 
 from core.hardware.profiler import HardwareProfiler
 from database import get_session
-from models import Device, DeviceEvent, EventType, InstalledEmulator
+from models import CrashEvent, Device, DeviceEvent, EventType, InstalledEmulator
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,26 @@ class InstalledEmulatorIn(BaseModel):
     install_method: Optional[str] = Field(None, max_length=32)
 
 
+class SaveEvents24h(BaseModel):
+    """Aggregated save-event statistics for the last 24-hour window."""
+
+    saves_total: int = Field(0, ge=0)
+    saves_per_emulator: dict[str, int] = Field(default_factory=dict)
+    vault_size_mb: int = Field(0, ge=0)
+    vault_versions_total: int = Field(0, ge=0)
+    backup_failures_24h: int = Field(0, ge=0)
+
+
 class HeartbeatRequest(BaseModel):
-    """Payload posted by the on-device agent on a regular cadence."""
+    """Payload posted by the on-device agent on a regular cadence.
+
+    All Phase-1 OS/hardware fields are optional so existing agents remain
+    fully backwards-compatible. ``is_rooted`` defaults to False when absent.
+    """
 
     model_config = ConfigDict(extra="ignore")
 
+    # --- Existing required fields ---
     hardware_fingerprint: str = Field(..., min_length=8, max_length=128)
     device_name: str = Field(..., min_length=1, max_length=255)
     chipset: str = Field(..., min_length=1, max_length=255)
@@ -74,6 +90,49 @@ class HeartbeatRequest(BaseModel):
     battery_pct: Optional[int] = Field(None, ge=0, le=100)
     storage_free_gb: Optional[float] = Field(None, ge=0)
     installed_emulators: list[InstalledEmulatorIn] = Field(default_factory=list)
+
+    # --- Phase 1: OS / device identity ---
+    manufacturer: Optional[str] = Field(None, max_length=128)
+    model: Optional[str] = Field(None, max_length=128)
+    android_release: Optional[str] = Field(None, max_length=32)
+
+    # --- Phase 1: SoC / GPU ---
+    soc_vendor: Optional[str] = Field(None, max_length=128)
+    soc_chip: Optional[str] = Field(None, max_length=128)
+    gpu_family: Optional[str] = Field(None, max_length=128)
+
+    # --- Phase 1: Memory ---
+    page_size: Optional[int] = Field(None, ge=0)
+    ram_mb: Optional[int] = Field(None, ge=0)
+
+    # --- Phase 1: Shizuku + root ---
+    shizuku_version: Optional[int] = Field(None, ge=0)
+    is_rooted: bool = False
+
+    # --- Phase 1: Controller profile ---
+    has_analog_sticks: Optional[bool] = None
+    controller_layout: Optional[str] = Field(None, max_length=32)
+
+    # --- Phase 1: Vendor packages (no ROM filenames — DSA art. 6 safe) ---
+    vendor_shell_packages: Optional[list[str]] = None
+
+    # --- Phase 1: Thermal / battery ---
+    thermal_state: Optional[str] = Field(None, max_length=32)
+    battery_level: Optional[float] = Field(None, ge=0.0, le=100.0)
+    battery_temperature_c: Optional[float] = Field(None, ge=-20.0, le=100.0)
+
+    # --- Phase 1: Save-event aggregates (last 24 h) ---
+    save_events_24h: Optional[SaveEvents24h] = None
+
+    @field_validator("controller_layout")
+    @classmethod
+    def _validate_layout(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        allowed = {"dual_stick", "no_stick", "single_stick"}
+        if v not in allowed:
+            raise ValueError(f"controller_layout must be one of {sorted(allowed)}")
+        return v
 
 
 class HeartbeatResponse(BaseModel):
@@ -118,6 +177,26 @@ class DeviceListItem(BaseModel):
     last_seen: datetime
     online: bool
 
+    # Phase 1 additions
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    android_release: Optional[str] = None
+    soc_vendor: Optional[str] = None
+    soc_chip: Optional[str] = None
+    gpu_family: Optional[str] = None
+    page_size: Optional[int] = None
+    ram_mb: Optional[int] = None
+    shizuku_version: Optional[int] = None
+    is_rooted: bool = False
+    has_analog_sticks: Optional[bool] = None
+    controller_layout: Optional[str] = None
+    vendor_shell_packages: Optional[list] = None
+    thermal_state: Optional[str] = None
+    battery_level: Optional[float] = None
+    battery_temperature_c: Optional[float] = None
+    last_heartbeat_at: Optional[datetime] = None
+    save_events_24h: Optional[dict] = None
+
 
 class DeviceDetail(DeviceListItem):
     created_at: datetime
@@ -125,6 +204,62 @@ class DeviceDetail(DeviceListItem):
     hardware_fingerprint: str
     recent_events: list[DeviceEventOut]
     installed_emulators: list[InstalledEmulatorOut]
+
+
+# ---------------------------------------------------------------------------
+# Crash-event models
+# ---------------------------------------------------------------------------
+
+
+class CrashEventRequest(BaseModel):
+    """Crash telemetry posted by the on-device agent.
+
+    ``game_id`` must be an official product code (e.g. SLUS-00123).
+    ROM filenames and hashes are explicitly forbidden (DSA art. 6 compliance).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    hardware_fingerprint: str = Field(..., min_length=8, max_length=128)
+    timestamp: datetime
+
+    emulator_package: Optional[str] = Field(None, max_length=255)
+    emulator_version_name: Optional[str] = Field(None, max_length=64)
+    emulator_version_code: Optional[int] = Field(None, ge=0)
+
+    # Official product code only — NOT a filename or hash
+    game_id: Optional[str] = Field(None, max_length=64)
+    platform: Optional[str] = Field(None, max_length=32)
+    duration_played_sec: Optional[int] = Field(None, ge=0)
+
+    crash_reason: Optional[str] = Field(None, max_length=255)
+    crash_signal: Optional[str] = Field(None, max_length=32)
+
+    rss_mb: Optional[int] = Field(None, ge=0)
+    pss_mb: Optional[int] = Field(None, ge=0)
+
+    stacktrace_hash: Optional[str] = Field(None, max_length=64)
+    tombstone_excerpt: Optional[str] = Field(None, max_length=4096)
+
+    thermal_state: Optional[str] = Field(None, max_length=32)
+    battery_level: Optional[float] = Field(None, ge=0.0, le=100.0)
+    battery_temperature_c: Optional[float] = Field(None, ge=-20.0, le=100.0)
+    free_ram_mb: Optional[int] = Field(None, ge=0)
+    page_size: Optional[int] = Field(None, ge=0)
+
+
+class CrashEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    device_id: str
+    timestamp: datetime
+    emulator_package: Optional[str]
+    game_id: Optional[str]
+    platform: Optional[str]
+    crash_reason: Optional[str]
+    crash_signal: Optional[str]
+    created_at: datetime
 
 
 # Legacy compat models -------------------------------------------------------
@@ -200,6 +335,38 @@ def _is_online(last_seen: datetime, now: datetime | None = None) -> bool:
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
+def _device_to_list_item(d: Device, now: datetime) -> DeviceListItem:
+    return DeviceListItem(
+        device_id=d.id,
+        device_name=d.device_name,
+        chipset=d.chipset,
+        android_api=d.android_api,
+        ram_gb=d.ram_gb,
+        shizuku_available=d.shizuku_available,
+        agent_version=d.agent_version,
+        last_seen=d.last_seen,
+        online=_is_online(d.last_seen, now),
+        manufacturer=d.manufacturer,
+        model=d.model,
+        android_release=d.android_release,
+        soc_vendor=d.soc_vendor,
+        soc_chip=d.soc_chip,
+        gpu_family=d.gpu_family,
+        page_size=d.page_size,
+        ram_mb=d.ram_mb,
+        shizuku_version=d.shizuku_version,
+        is_rooted=d.is_rooted,
+        has_analog_sticks=d.has_analog_sticks,
+        controller_layout=d.controller_layout,
+        vendor_shell_packages=d.vendor_shell_packages,
+        thermal_state=d.thermal_state,
+        battery_level=d.battery_level,
+        battery_temperature_c=d.battery_temperature_c,
+        last_heartbeat_at=d.last_heartbeat_at,
+        save_events_24h=d.save_events_24h,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Telemetry endpoints
 # ---------------------------------------------------------------------------
@@ -224,6 +391,7 @@ async def heartbeat(
     - Replace ``installed_emulators`` rows for that device with the inbound list.
     - Append a ``heartbeat`` ``DeviceEvent`` carrying the full payload.
     - Validate ``X-Agent-Version`` header / payload version and warn on old.
+    - All Phase-1 fields are optional — old agents without them remain compatible.
     """
     now = datetime.now(timezone.utc)
 
@@ -236,10 +404,66 @@ async def heartbeat(
             payload.hardware_fingerprint[:12],
         )
 
+    # Capture client IP for admin-only last_known_ip field.
+    client_ip: str | None = None
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    elif request.client:
+        client_ip = request.client.host
+
     result = await session.execute(
         select(Device).where(Device.hardware_fingerprint == payload.hardware_fingerprint)
     )
     device = result.scalar_one_or_none()
+
+    # Common field updates applied to both new and existing devices.
+    def _apply_payload(dev: Device) -> None:
+        dev.device_name = payload.device_name
+        dev.chipset = payload.chipset
+        dev.android_api = payload.android_api
+        dev.ram_gb = payload.ram_gb
+        dev.shizuku_available = payload.shizuku_available
+        dev.agent_version = effective_version
+        dev.last_seen = now
+        dev.last_heartbeat_at = now
+        if client_ip:
+            dev.last_known_ip = client_ip
+
+        # Phase 1 optional fields — only overwrite if provided
+        if payload.manufacturer is not None:
+            dev.manufacturer = payload.manufacturer
+        if payload.model is not None:
+            dev.model = payload.model
+        if payload.android_release is not None:
+            dev.android_release = payload.android_release
+        if payload.soc_vendor is not None:
+            dev.soc_vendor = payload.soc_vendor
+        if payload.soc_chip is not None:
+            dev.soc_chip = payload.soc_chip
+        if payload.gpu_family is not None:
+            dev.gpu_family = payload.gpu_family
+        if payload.page_size is not None:
+            dev.page_size = payload.page_size
+        if payload.ram_mb is not None:
+            dev.ram_mb = payload.ram_mb
+        if payload.shizuku_version is not None:
+            dev.shizuku_version = payload.shizuku_version
+        dev.is_rooted = payload.is_rooted
+        if payload.has_analog_sticks is not None:
+            dev.has_analog_sticks = payload.has_analog_sticks
+        if payload.controller_layout is not None:
+            dev.controller_layout = payload.controller_layout
+        if payload.vendor_shell_packages is not None:
+            dev.vendor_shell_packages = payload.vendor_shell_packages
+        if payload.thermal_state is not None:
+            dev.thermal_state = payload.thermal_state
+        if payload.battery_level is not None:
+            dev.battery_level = payload.battery_level
+        if payload.battery_temperature_c is not None:
+            dev.battery_temperature_c = payload.battery_temperature_c
+        if payload.save_events_24h is not None:
+            dev.save_events_24h = payload.save_events_24h.model_dump()
 
     if device is None:
         device = Device(
@@ -254,15 +478,10 @@ async def heartbeat(
         )
         session.add(device)
         await session.flush()
+        _apply_payload(device)
         logger.info("New device registered: id=%s name=%s", device.id, device.device_name)
     else:
-        device.device_name = payload.device_name
-        device.chipset = payload.chipset
-        device.android_api = payload.android_api
-        device.ram_gb = payload.ram_gb
-        device.shizuku_available = payload.shizuku_available
-        device.agent_version = effective_version
-        device.last_seen = now
+        _apply_payload(device)
 
     # Refresh installed emulators inventory: upsert by (device_id, package_name).
     existing_q = await session.execute(
@@ -292,13 +511,22 @@ async def heartbeat(
         if pkg not in incoming:
             await session.delete(row)
 
-    # Heartbeat event with metrics payload.
+    # Heartbeat event — no ROM data, DSA-safe payload.
     event_payload = {
         "battery_pct": payload.battery_pct,
         "storage_free_gb": payload.storage_free_gb,
         "agent_version": effective_version,
         "ram_gb": payload.ram_gb,
         "shizuku_available": payload.shizuku_available,
+        # Phase 1 additions
+        "thermal_state": payload.thermal_state,
+        "battery_level": payload.battery_level,
+        "battery_temperature_c": payload.battery_temperature_c,
+        "soc_vendor": payload.soc_vendor,
+        "soc_chip": payload.soc_chip,
+        "is_rooted": payload.is_rooted,
+        "controller_layout": payload.controller_layout,
+        "has_analog_sticks": payload.has_analog_sticks,
     }
     session.add(
         DeviceEvent(
@@ -311,6 +539,74 @@ async def heartbeat(
 
     await session.commit()
     return HeartbeatResponse(device_id=device.id, server_time=now, online=True)
+
+
+@router.post(
+    "/crash-events",
+    response_model=CrashEventResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ingest a crash event from the on-device agent.",
+)
+@limiter.limit("120/minute")
+async def post_crash_event(
+    request: Request,
+    payload: CrashEventRequest,
+    session: SessionDep,
+) -> CrashEventResponse:
+    """Accept a crash telemetry event from a known device.
+
+    Resolves the device by ``hardware_fingerprint``. Returns 404 if the
+    device has not heartbeated yet (agent should call heartbeat first).
+
+    No ROM filenames or hashes are accepted in this endpoint.
+    ``game_id`` must be an official product code (DSA art. 6 compliant).
+    """
+    result = await session.execute(
+        select(Device).where(Device.hardware_fingerprint == payload.hardware_fingerprint)
+    )
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"No device found for fingerprint "
+                f"'{payload.hardware_fingerprint[:12]}…'. "
+                "Call POST /devices/heartbeat first."
+            ),
+        )
+
+    crash = CrashEvent(
+        device_id=device.id,
+        timestamp=payload.timestamp,
+        emulator_package=payload.emulator_package,
+        emulator_version_name=payload.emulator_version_name,
+        emulator_version_code=payload.emulator_version_code,
+        game_id=payload.game_id,
+        platform=payload.platform,
+        duration_played_sec=payload.duration_played_sec,
+        crash_reason=payload.crash_reason,
+        crash_signal=payload.crash_signal,
+        rss_mb=payload.rss_mb,
+        pss_mb=payload.pss_mb,
+        stacktrace_hash=payload.stacktrace_hash,
+        tombstone_excerpt=payload.tombstone_excerpt,
+        thermal_state=payload.thermal_state,
+        battery_level=payload.battery_level,
+        battery_temperature_c=payload.battery_temperature_c,
+        free_ram_mb=payload.free_ram_mb,
+        page_size=payload.page_size,
+    )
+    session.add(crash)
+    await session.commit()
+    await session.refresh(crash)
+
+    logger.info(
+        "Crash event recorded: device=%s emulator=%s game=%s",
+        device.id,
+        crash.emulator_package,
+        crash.game_id,
+    )
+    return CrashEventResponse.model_validate(crash)
 
 
 @router.post(
@@ -350,20 +646,7 @@ async def list_devices(session: SessionDep) -> list[DeviceListItem]:
     now = datetime.now(timezone.utc)
     res = await session.execute(select(Device).order_by(Device.last_seen.desc()))
     devices = res.scalars().all()
-    return [
-        DeviceListItem(
-            device_id=d.id,
-            device_name=d.device_name,
-            chipset=d.chipset,
-            android_api=d.android_api,
-            ram_gb=d.ram_gb,
-            shizuku_available=d.shizuku_available,
-            agent_version=d.agent_version,
-            last_seen=d.last_seen,
-            online=_is_online(d.last_seen, now),
-        )
-        for d in devices
-    ]
+    return [_device_to_list_item(d, now) for d in devices]
 
 
 @router.get(
@@ -390,16 +673,11 @@ async def get_device(device_id: str, session: SessionDep) -> DeviceDetail:
     )
     events = events_res.scalars().all()
 
+    now = datetime.now(timezone.utc)
+    base = _device_to_list_item(device, now)
+
     return DeviceDetail(
-        device_id=device.id,
-        device_name=device.device_name,
-        chipset=device.chipset,
-        android_api=device.android_api,
-        ram_gb=device.ram_gb,
-        shizuku_available=device.shizuku_available,
-        agent_version=device.agent_version,
-        last_seen=device.last_seen,
-        online=_is_online(device.last_seen),
+        **base.model_dump(),
         created_at=device.created_at,
         updated_at=device.updated_at,
         hardware_fingerprint=device.hardware_fingerprint,
