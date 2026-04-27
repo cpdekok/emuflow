@@ -132,3 +132,32 @@ Zie `10-voice-control.md`.
 - Given laatst-gespeelde game bekend
 - When gebruiker opent launcher
 - Then "Verder met [game]"-knop is zichtbaar binnen 1 seconde
+
+## Implementatie-architectuur (fase 1)
+
+Setup-QoL is verdeeld over drie modules in de Android Agent:
+
+### `com.emuflow.agent.permissions`
+- **PermissionBundleManager** — één-scherm permission-flow. Conditioneel per SDK_INT: POST_NOTIFICATIONS (33+), FOREGROUND_SERVICE_DATA_SYNC (34+), MANAGE_EXTERNAL_STORAGE (30+). Shizuku optioneel.
+
+### `com.emuflow.agent.qol`
+- **DeviceHealthChecker** — leest runtime-status uit Android system services (BatteryManager, StatFs, PowerManager). Levert `DeviceHealthSnapshot` met kabel-, batterij-, storage- en thermal-velden.
+- **DeviceHealthSnapshot** — datamodel met afgeleide booleans (`warning`, `criticallyLow`, `severe`) zodat UI direct rendert zonder berekeningen.
+- **ResumeStateManager** — bewaart laatst-gespeelde combinatie (emulator + ROM-id) in app-private opslag. ROM-id is een lokale SHA256-prefix; nooit naar servers.
+
+### `com.emuflow.agent.hardware`
+- **ControllerDetector** + **HardwareProfileDetector** — eenmalig bij setup, plus periodiek voor heartbeat.
+
+### Pipeline bij Setup
+1. Pre-flight scherm vraagt `DeviceHealthChecker.snapshot(context)` op.
+2. Resultaat per check getoond met groen/oranje/rood-indicatie.
+3. Op `criticallyLow`: blokkerende waarschuwing met directe actie-link (vrijmaken, opladen).
+4. Permissions afgehandeld via `PermissionBundleManager.requestManageExternalStorage()` enz.
+5. Bij voltooiing: clean-slate-keuze (default A: vendor shells DISABLED).
+
+### Pipeline bij Heartbeat
+- HeartbeatService roept elke N minuten `DeviceHealthChecker.snapshot()` aan en stuurt thermal_state, battery_level, battery_temperature_c mee in het payload-schema.
+
+### Pipeline bij Resume
+- Bij start van een game roept de launcher `ResumeStateManager.saveLastPlayed()` aan.
+- Op homepage van EmuFlow leest de UI `readLastPlayed()` en toont "Verder met X" knop.
