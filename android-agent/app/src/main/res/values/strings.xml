@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nederlandse strings voor EmuFlow Agent -->
+<resources>
+    <!-- App -->
+    <string name="app_name">EmuFlow Agent</string>
+
+    <!-- Navigatie -->
+    <string name="nav_home">Home</string>
+    <string name="nav_preflight">Configuratie</string>
+    <string name="nav_settings">Instellingen</string>
+
+    <!-- Algemene statussen -->
+    <string name="status_stub">Wordt geïmplementeerd…</string>
+    <string name="status_active">Actief</string>
+    <string name="status_inactive">Inactief</string>
+
+    <!-- HomeScreen -->
+    <string name="home_resume_title">Verder spelen</string>
+    <string name="home_resume_no_game">Nog geen game gespeeld via EmuFlow</string>
+    <string name="home_resume_button">Verder met laatste game</string>
+
+    <string name="home_hardware_title">Hardware</string>
+    <string name="home_hardware_device">Device</string>
+    <string name="home_hardware_soc">SoC</string>
+    <string name="home_hardware_android">Android</string>
+    <string name="home_hardware_controller">Controller</string>
+    <string name="home_hardware_ram">RAM</string>
+
+    <string name="home_services_title">Services</string>
+    <string name="home_service_heartbeat">Telemetrie</string>
+    <string name="home_service_save_watcher">Save-backup</string>
+
+    <string name="home_vault_title">Save Vault</string>
+    <string name="home_vault_last_backup">Laatste backup</string>
+    <string name="home_vault_no_backup_yet">Nog geen backup gemaakt</string>
+    <string name="home_vault_size">Vault-grootte</string>
+
+    <!-- PreflightScreen -->
+    <string name="preflight_title">App configureren</string>
+    <string name="preflight_description">EmuFlow heeft een paar toestemmingen nodig om save-backups te maken en op de achtergrond te draaien.</string>
+    <string name="preflight_loading">Permissie-status laden…</string>
+    <string name="preflight_continue">Doorgaan naar Home</string>
+
+    <!-- Permissies -->
+    <string name="permission_optional">(optioneel)</string>
+
+    <string name="permission_storage_label">Opslag</string>
+    <string name="permission_storage_desc">Toegang tot alle bestanden vereist voor Save Vault (saves staan in /sdcard/)</string>
+    <string name="permission_storage_action">Opslag toestaan in instellingen</string>
+
+    <string name="permission_notifications_label">Notificaties</string>
+    <string name="permission_notifications_desc">Toestemming voor achtergrond-service notificaties (vereist Android 13+)</string>
+    <string name="permission_notifications_action">Notificaties toestaan</string>
+
+    <string name="permission_shizuku_label">Shizuku</string>
+    <string name="permission_shizuku_desc">Optioneel: vereist voor clean-slate wizard en toegang tot Android/data/ saves. Installeer Shizuku en verbind via ADB.</string>
+    <string name="permission_shizuku_action">Shizuku-toegang vragen</string>
+
+    <!-- SettingsScreen -->
+    <string name="settings_title">Instellingen</string>
+
+    <string name="settings_privacy_title">Privacy</string>
+    <string name="settings_telemetry_label">Anonieme statistieken</string>
+    <string name="settings_telemetry_desc">Stuur anonieme gebruiksstatistieken (frequentie van opslaan, type emulator). Geen ROM-informatie of persoonlijke data.</string>
+    <string name="settings_legal_disclaimer">EmuFlow slaat uw savestates op uw eigen apparaat op. EmuFlow ontvangt, verwerkt of kopieert geen spelbestanden (ROMs). ROM-informatie wordt nooit naar onze servers verstuurd.</string>
+
+    <string name="settings_vault_title">Save Vault</string>
+    <string name="settings_vault_location">Vault-locatie:</string>
+    <string name="settings_vault_open">Open in Bestandsbeheerder</string>
+
+    <string name="settings_cleanslate_title">Vendor-apps</string>
+    <string name="settings_cleanslate_desc">Schakel voorgeïnstalleerde vendor-launcher en controller-apps uit voor optimale EmuFlow-werking. Vereist Shizuku.</string>
+    <string name="settings_cleanslate_run">Clean-slate uitvoeren</string>
+    <string name="settings_cleanslate_restore">Vendor-apps herstellen</string>
+
+    <string name="settings_about_title">Over</string>
+    <string name="settings_about_version">Versie</string>
+    <string name="settings_about_backend">Backend</string>
+    <string name="settings_about_device_id">Device-ID (pseudoniem)</string>
+</resources>
