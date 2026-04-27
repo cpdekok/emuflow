@@ -37,8 +37,104 @@ def _heartbeat_payload(**overrides: object) -> dict:
     return base
 
 
+def _rp_mini_payload(**overrides: object) -> dict:
+    """Retroid Pocket Mini full Phase-1 heartbeat payload."""
+    base: dict[str, object] = {
+        "hardware_fingerprint": "fp-rpmini-" + "c" * 26,
+        "device_name": "Retroid Pocket Mini",
+        "chipset": "Dimensity 1100",
+        "android_api": 33,
+        "ram_gb": 8.0,
+        "shizuku_available": True,
+        "agent_version": "0.3.0",
+        # Phase 1 new fields
+        "manufacturer": "Retroid",
+        "model": "RP Mini",
+        "android_release": "13",
+        "soc_vendor": "MediaTek",
+        "soc_chip": "MT6891",
+        "gpu_family": "Mali-G77",
+        "page_size": 4096,
+        "ram_mb": 8192,
+        "shizuku_version": 13,
+        "is_rooted": False,
+        "has_analog_sticks": True,
+        "controller_layout": "dual_stick",
+        "vendor_shell_packages": ["com.retroid.launcher"],
+        "thermal_state": "nominal",
+        "battery_level": 78.5,
+        "battery_temperature_c": 32.1,
+        "save_events_24h": {
+            "saves_total": 5,
+            "saves_per_emulator": {"org.dolphinemu.dolphinemu": 3, "com.retroarch": 2},
+            "vault_size_mb": 42,
+            "vault_versions_total": 12,
+            "backup_failures_24h": 0,
+        },
+    }
+    base.update(overrides)
+    return base
+
+
+def _ayaneo_payload(**overrides: object) -> dict:
+    """AYANEO Pocket Micro Classic full Phase-1 heartbeat payload."""
+    base: dict[str, object] = {
+        "hardware_fingerprint": "fp-ayaneo-" + "d" * 26,
+        "device_name": "AYANEO Pocket Micro Classic",
+        "chipset": "Snapdragon 8 Gen 2",
+        "android_api": 34,
+        "ram_gb": 12.0,
+        "shizuku_available": True,
+        "agent_version": "0.3.0",
+        "manufacturer": "AYANEO",
+        "model": "Pocket Micro Classic",
+        "android_release": "14",
+        "soc_vendor": "Qualcomm",
+        "soc_chip": "SM8550",
+        "gpu_family": "Adreno 740",
+        "page_size": 16384,
+        "ram_mb": 12288,
+        "shizuku_version": 15,
+        "is_rooted": False,
+        "has_analog_sticks": True,
+        "controller_layout": "dual_stick",
+        "vendor_shell_packages": ["com.ayaneo.launcher"],
+        "thermal_state": "nominal",
+        "battery_level": 55.0,
+        "battery_temperature_c": 30.0,
+    }
+    base.update(overrides)
+    return base
+
+
+def _crash_payload(hardware_fingerprint: str, **overrides: object) -> dict:
+    base: dict[str, object] = {
+        "hardware_fingerprint": hardware_fingerprint,
+        "timestamp": "2026-05-01T12:00:00Z",
+        "emulator_package": "org.dolphinemu.dolphinemu",
+        "emulator_version_name": "5.0-21000",
+        "emulator_version_code": 21000,
+        "game_id": "GALE01",
+        "platform": "gc",
+        "duration_played_sec": 3600,
+        "crash_reason": "SIGSEGV in libdolphin.so",
+        "crash_signal": "SIGSEGV",
+        "rss_mb": 512,
+        "pss_mb": 480,
+        "stacktrace_hash": "abc123def456" + "0" * 52,
+        "tombstone_excerpt": "signal 11 (SIGSEGV), code 1...",
+        "thermal_state": "hot",
+        "battery_level": 45.0,
+        "battery_temperature_c": 38.5,
+        "free_ram_mb": 256,
+        "page_size": 4096,
+    }
+    base.update(overrides)
+    return base
+
+
 # ---------------------------------------------------------------------------
-# Heartbeat upsert
+# Heartbeat upsert — existing tests
 # ---------------------------------------------------------------------------
 
 
@@ -74,6 +170,212 @@ async def test_heartbeat_upsert_existing_device(client: AsyncClient) -> None:
         assert len(rows) == 1, "fingerprint match must not create a duplicate"
         assert rows[0].device_name == "Pixel 7 (renamed)"
         assert rows[0].ram_gb == 12.0
+
+
+# ---------------------------------------------------------------------------
+# Heartbeat backwards-compatibility — minimal payload without Phase-1 fields
+# ---------------------------------------------------------------------------
+
+
+async def test_heartbeat_without_new_fields_backwards_compat(client: AsyncClient) -> None:
+    """Old agents that don't send Phase-1 fields must still work fine."""
+    minimal = {
+        "hardware_fingerprint": "fp-minimal-" + "e" * 25,
+        "device_name": "Old Agent Phone",
+        "chipset": "Exynos 2200",
+        "android_api": 31,
+        "ram_gb": 6.0,
+        # No Phase-1 fields at all
+    }
+    res = await client.post("/devices/heartbeat", json=minimal)
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["device_id"]
+    assert body["online"] is True
+
+    async with database.SessionLocal() as s:
+        rows = (await s.execute(select(Device))).scalars().all()
+        assert len(rows) == 1
+        dev = rows[0]
+        # Phase-1 fields should be None / default
+        assert dev.manufacturer is None
+        assert dev.soc_vendor is None
+        assert dev.is_rooted is False
+        assert dev.has_analog_sticks is None
+        assert dev.controller_layout is None
+
+
+# ---------------------------------------------------------------------------
+# Heartbeat with full Phase-1 fields — RP Mini
+# ---------------------------------------------------------------------------
+
+
+async def test_heartbeat_rp_mini_all_fields(client: AsyncClient) -> None:
+    """Retroid Pocket Mini heartbeat with full Phase-1 payload."""
+    res = await client.post("/devices/heartbeat", json=_rp_mini_payload())
+    assert res.status_code == 200, res.text
+
+    device_id = res.json()["device_id"]
+    detail = await client.get(f"/devices/{device_id}")
+    assert detail.status_code == 200
+    d = detail.json()
+
+    assert d["manufacturer"] == "Retroid"
+    assert d["model"] == "RP Mini"
+    assert d["android_release"] == "13"
+    assert d["soc_vendor"] == "MediaTek"
+    assert d["soc_chip"] == "MT6891"
+    assert d["gpu_family"] == "Mali-G77"
+    assert d["page_size"] == 4096
+    assert d["ram_mb"] == 8192
+    assert d["shizuku_version"] == 13
+    assert d["is_rooted"] is False
+    assert d["has_analog_sticks"] is True
+    assert d["controller_layout"] == "dual_stick"
+    assert d["vendor_shell_packages"] == ["com.retroid.launcher"]
+    assert d["thermal_state"] == "nominal"
+    assert d["battery_level"] == 78.5
+    assert d["battery_temperature_c"] == 32.1
+    assert d["last_heartbeat_at"] is not None
+
+    # Save-events aggregates
+    se = d["save_events_24h"]
+    assert se is not None
+    assert se["saves_total"] == 5
+    assert se["vault_size_mb"] == 42
+    assert se["backup_failures_24h"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Heartbeat with full Phase-1 fields — AYANEO Pocket Micro Classic
+# ---------------------------------------------------------------------------
+
+
+async def test_heartbeat_ayaneo_pocket_micro_classic(client: AsyncClient) -> None:
+    """AYANEO Pocket Micro Classic heartbeat with full Phase-1 payload."""
+    res = await client.post("/devices/heartbeat", json=_ayaneo_payload())
+    assert res.status_code == 200, res.text
+
+    device_id = res.json()["device_id"]
+    detail = await client.get(f"/devices/{device_id}")
+    assert detail.status_code == 200
+    d = detail.json()
+
+    assert d["manufacturer"] == "AYANEO"
+    assert d["model"] == "Pocket Micro Classic"
+    assert d["soc_vendor"] == "Qualcomm"
+    assert d["soc_chip"] == "SM8550"
+    assert d["gpu_family"] == "Adreno 740"
+    assert d["page_size"] == 16384
+    assert d["ram_mb"] == 12288
+    assert d["controller_layout"] == "dual_stick"
+
+
+# ---------------------------------------------------------------------------
+# Heartbeat — invalid controller_layout rejected
+# ---------------------------------------------------------------------------
+
+
+async def test_heartbeat_invalid_controller_layout(client: AsyncClient) -> None:
+    """controller_layout must be one of dual_stick/no_stick/single_stick."""
+    payload = _heartbeat_payload(controller_layout="turbo_stick")
+    res = await client.post("/devices/heartbeat", json=payload)
+    assert res.status_code == 422, res.text
+
+
+# ---------------------------------------------------------------------------
+# Crash-event POST endpoint
+# ---------------------------------------------------------------------------
+
+
+async def test_crash_event_post_success(client: AsyncClient) -> None:
+    """Posting a crash event for a known device returns 201 with correct data."""
+    # First, register the device via heartbeat
+    hb = await client.post("/devices/heartbeat", json=_rp_mini_payload())
+    assert hb.status_code == 200
+    fp = _rp_mini_payload()["hardware_fingerprint"]
+
+    crash = _crash_payload(fp)
+    res = await client.post("/devices/crash-events", json=crash)
+    assert res.status_code == 201, res.text
+    body = res.json()
+
+    assert body["id"]
+    assert body["device_id"] == hb.json()["device_id"]
+    assert body["emulator_package"] == "org.dolphinemu.dolphinemu"
+    assert body["game_id"] == "GALE01"
+    assert body["platform"] == "gc"
+    assert body["crash_reason"] == "SIGSEGV in libdolphin.so"
+    assert body["crash_signal"] == "SIGSEGV"
+    assert body["created_at"] is not None
+
+
+async def test_crash_event_unknown_device_404(client: AsyncClient) -> None:
+    """Crash event for an unknown fingerprint returns 404."""
+    crash = _crash_payload("fp-unknown-" + "z" * 25)
+    res = await client.post("/devices/crash-events", json=crash)
+    assert res.status_code == 404, res.text
+
+
+async def test_crash_event_minimal_payload(client: AsyncClient) -> None:
+    """Crash event with only required fields (hardware_fingerprint + timestamp)."""
+    hb = await client.post("/devices/heartbeat", json=_heartbeat_payload())
+    fp = _heartbeat_payload()["hardware_fingerprint"]
+
+    minimal_crash = {
+        "hardware_fingerprint": fp,
+        "timestamp": "2026-05-01T15:00:00Z",
+    }
+    res = await client.post("/devices/crash-events", json=minimal_crash)
+    assert res.status_code == 201, res.text
+    body = res.json()
+    assert body["game_id"] is None
+    assert body["emulator_package"] is None
+
+
+# ---------------------------------------------------------------------------
+# Response models contain new Phase-1 fields
+# ---------------------------------------------------------------------------
+
+
+async def test_device_list_contains_phase1_fields(client: AsyncClient) -> None:
+    """GET /devices response includes Phase-1 fields."""
+    await client.post("/devices/heartbeat", json=_rp_mini_payload())
+    res = await client.get("/devices")
+    assert res.status_code == 200
+    items = res.json()
+    assert len(items) == 1
+    d = items[0]
+
+    # All Phase-1 fields must be present in response schema
+    for field in [
+        "manufacturer", "model", "android_release",
+        "soc_vendor", "soc_chip", "gpu_family",
+        "page_size", "ram_mb", "shizuku_version",
+        "is_rooted", "has_analog_sticks", "controller_layout",
+        "vendor_shell_packages", "thermal_state",
+        "battery_level", "battery_temperature_c",
+        "last_heartbeat_at", "save_events_24h",
+    ]:
+        assert field in d, f"Field '{field}' missing from DeviceListItem response"
+
+
+async def test_device_detail_contains_phase1_fields(client: AsyncClient) -> None:
+    """GET /devices/{id} response includes Phase-1 fields."""
+    hb = await client.post("/devices/heartbeat", json=_ayaneo_payload())
+    device_id = hb.json()["device_id"]
+
+    res = await client.get(f"/devices/{device_id}")
+    assert res.status_code == 200
+    d = res.json()
+
+    assert "manufacturer" in d
+    assert "soc_vendor" in d
+    assert "controller_layout" in d
+    assert "save_events_24h" in d
+    assert "last_heartbeat_at" in d
+    # last_known_ip is admin-only — should NOT appear in DeviceDetail
+    assert "last_known_ip" not in d
 
 
 # ---------------------------------------------------------------------------
