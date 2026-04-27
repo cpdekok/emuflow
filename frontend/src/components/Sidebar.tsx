@@ -11,6 +11,7 @@ import {
   ChatBubbleLeftRightIcon,
   RocketLaunchIcon,
   ScaleIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
 const navLinks = [
@@ -21,6 +22,7 @@ const navLinks = [
   { href: "/updates", label: "Updates", icon: ArrowPathIcon },
   { href: "/bios", label: "BIOS", icon: ShieldCheckIcon },
   { href: "/support", label: "Support", icon: ChatBubbleLeftRightIcon },
+  { href: "/admin/telemetry", label: "Telemetrie", icon: ChartBarIcon },
   { href: "/legal", label: "Juridisch", icon: ScaleIcon },
 ];
 
