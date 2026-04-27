@@ -9,15 +9,19 @@ import {
   ArrowPathIcon,
   ShieldCheckIcon,
   ChatBubbleLeftRightIcon,
+  RocketLaunchIcon,
+  ScaleIcon,
 } from "@heroicons/react/24/outline";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: HomeIcon },
   { href: "/devices", label: "Devices", icon: DevicePhoneMobileIcon },
+  { href: "/setup", label: "Setup wizard", icon: RocketLaunchIcon },
   { href: "/controllers", label: "Controllers", icon: AdjustmentsHorizontalIcon },
   { href: "/updates", label: "Updates", icon: ArrowPathIcon },
   { href: "/bios", label: "BIOS", icon: ShieldCheckIcon },
   { href: "/support", label: "Support", icon: ChatBubbleLeftRightIcon },
+  { href: "/legal", label: "Juridisch", icon: ScaleIcon },
 ];
 
 export default function Sidebar() {
