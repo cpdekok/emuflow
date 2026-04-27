@@ -1,0 +1,109 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-04-27T11:00:00Z",
+  "profiles": [
+    {
+      "match": {
+        "manufacturer": "Retroid",
+        "model": "Pocket Mini"
+      },
+      "device_class": "handheld",
+      "soc_vendor": "qualcomm",
+      "soc_chip": "Snapdragon 865",
+      "gpu_family": "adreno",
+      "default_renderer": "vulkan",
+      "vulkan_recommended": true,
+      "max_realistic_platform": "ps2_light",
+      "supported_platforms": [
+        "gb", "gbc", "gba", "nes", "snes", "genesis", "n64",
+        "ps1", "psp", "ds", "dreamcast", "saturn"
+      ],
+      "experimental_platforms": [
+        "gamecube", "wii", "ps2", "switch_homebrew"
+      ],
+      "has_analog_sticks": true,
+      "controller_layout": "dual_stick",
+      "vendor_packages": [
+        "com.retroid.launcher",
+        "com.retroid.console"
+      ],
+      "page_size_default": 4096,
+      "quirks": [],
+      "notes": [
+        "Snapdragon 865 + Adreno 650: Vulkan-driver kwaliteit goed",
+        "AetherSX2 PS2 redelijk speelbaar met optimalisaties",
+        "Dolphin GameCube goed, Wii randje",
+        "Hall-effect dual sticks — geen slijtage drift probleem",
+        "4000mAh batterij: ruim voldoende voor lange sessies"
+      ]
+    },
+    {
+      "match": {
+        "manufacturer": "AYANEO",
+        "model": "AYANEO Pocket Micro Classic"
+      },
+      "device_class": "handheld",
+      "soc_vendor": "mediatek",
+      "soc_chip": "Helio G99",
+      "gpu_family": "mali",
+      "default_renderer": "opengl_es",
+      "vulkan_recommended": false,
+      "max_realistic_platform": "psp",
+      "supported_platforms": [
+        "gb", "gbc", "gba", "gg", "sms", "nes", "snes",
+        "genesis", "pce", "neogeo_pocket", "ps1_light", "psp_light"
+      ],
+      "experimental_platforms": [
+        "n64", "ds"
+      ],
+      "has_analog_sticks": false,
+      "controller_layout": "no_stick",
+      "vendor_packages": [
+        "com.ayaneo.ayaspace",
+        "com.ayaneo.master_controller",
+        "com.ayaneo.gamemanager",
+        "com.ayaneo.assistant"
+      ],
+      "page_size_default": 4096,
+      "quirks": [
+        "usb_shared_data_lines",
+        "no_headphone_jack",
+        "tactile_triggers_only"
+      ],
+      "notes": [
+        "MediaTek Helio G99 + Mali-G57: Vulkan-drivers berucht slecht, OpenGL-ES default",
+        "Sweet spot is GBA/SNES/GG (3:2 scherm-aspect ideaal voor GBA)",
+        "PS1 en PSP werken licht, geen GameCube/PS2/Wii ambities",
+        "USB-poort heeft gedeelde data-lines met interne controller — bij ADB-issues schakel interne controller tijdelijk uit via AYAspace > Controller",
+        "Geen 3.5mm-jack — audio via interne speakers, BT, of USB-C (mits controller uit)",
+        "2600mAh batterij — kleiner dan RP Mini, korter bij PSP/PS1",
+        "960x640 scherm: 3:2 aspect ratio perfect voor GBA (240x160 = 3:2)"
+      ]
+    }
+  ],
+  "fallback": {
+    "device_class": "unknown",
+    "soc_vendor": "unknown",
+    "soc_chip": "unknown",
+    "gpu_family": "unknown",
+    "default_renderer": "opengl_es",
+    "vulkan_recommended": false,
+    "max_realistic_platform": "psp",
+    "supported_platforms": [
+      "gb", "gbc", "gba", "nes", "snes", "genesis", "ps1"
+    ],
+    "experimental_platforms": [
+      "psp", "n64"
+    ],
+    "has_analog_sticks": null,
+    "controller_layout": "no_stick",
+    "vendor_packages": [],
+    "page_size_default": 4096,
+    "quirks": [],
+    "notes": [
+      "Onbekend device — veilige defaults toegepast",
+      "Device geregistreerd voor manuele review",
+      "OpenGL-ES als veiligste renderer-keuze"
+    ]
+  }
+}

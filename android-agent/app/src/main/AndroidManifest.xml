@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Permissies — conditioneel per SDK-versie:
+        - POST_NOTIFICATIONS: vereist Android 13 (API 33+), runtime-request nodig
+        - FOREGROUND_SERVICE_DATA_SYNC: vereist Android 14 (API 34+)
+        - MANAGE_EXTERNAL_STORAGE: vereist Android 11 (API 30+), runtime-request via Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION
+    -->
+
+    <!-- Internet toegang voor heartbeat naar backend -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Opslag — MANAGE_EXTERNAL_STORAGE is vereist voor save vault (API 30+) -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- Notificaties — POST_NOTIFICATIONS vereist API 33+, runtime-request -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground service — basis type voor HeartbeatService -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- FOREGROUND_SERVICE_DATA_SYNC: vereist API 34+ (Android 14) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!-- Wakelock — heartbeat-service mag CPU kort wakehouden -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Ontdek geïnstalleerde packages — voor vendor-shell detectie en emulator-detectie -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <!-- Ontvang informatie over processes/activiteiten (crash-rapport) -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Shizuku-provider vereist -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+
+    <application
+        android:name=".EmuFlowApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.EmuFlowAgent"
+        tools:targetApi="31">
+
+        <!-- Hoofd-activiteit -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.EmuFlowAgent">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+            HeartbeatService — foreground service voor telemetrie
+            foregroundServiceType="dataSync" vereist FOREGROUND_SERVICE_DATA_SYNC (API 34+)
+            Op API 30-33 wordt het type weggelaten (zie HeartbeatService.kt)
+        -->
+        <service
+            android:name=".telemetry.HeartbeatService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!--
+            SaveWatcherService — foreground service voor FileObserver
+        -->
+        <service
+            android:name=".savevault.SaveWatcherService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!--
+            Shizuku provider — vereist voor Shizuku-integratie
+            Zie: https://github.com/RikkaApps/Shizuku-API
+        -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+    </application>
+</manifest>

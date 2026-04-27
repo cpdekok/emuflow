@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Basis XML-thema — het eigenlijke thema is geconfigureerd in Compose via EmuFlowAgentTheme.kt -->
+<resources>
+    <!-- Splash/launch thema — Material 3 baseline -->
+    <style name="Theme.EmuFlowAgent" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Achtergrondkleur tijdens splash (voordat Compose actief is) -->
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Backup Rules — Android 11 en lager (fullBackupContent)
+    Device-ID wordt uitgesloten van backup — elk device krijgt eigen UUID.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="emuflow_agent_prefs.xml" />
+    <exclude domain="sharedpref" path="emuflow_settings.xml" />
+</full-backup-content>
