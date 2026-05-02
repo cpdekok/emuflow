@@ -110,6 +110,23 @@ Externe afhankelijkheden:
 
 ---
 
+## APK downloaden (zonder lokale build)
+
+De debug-APK wordt automatisch gebouwd door GitHub Actions bij elke push naar `main`.
+
+1. Ga naar [Actions → Android Agent — Build APK](https://github.com/cpdekok/emuflow/actions/workflows/android-build.yml)
+2. Klik de meest recente succesvolle run aan
+3. Onderaan onder "Artifacts" download je `emuflow-agent-debug` (zip met de .apk)
+4. Pak uit en kopieer naar het Android-device (USB-C, Google Drive of `adb install`)
+
+Debug-APK is signed met de Android-debug-keystore en direct installeerbaar (sta
+"installeren uit onbekende bronnen" toe in Android-instellingen).
+
+Voor een officiële release-APK: maak een GitHub release (`v0.x.y` tag) — de
+workflow attacht de unsigned release-APK automatisch aan de release.
+
+---
+
 ## Build-instructies
 
 ### Vereisten
