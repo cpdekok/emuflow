@@ -48,6 +48,19 @@ limiter = Limiter(key_func=get_remote_address)
 ONLINE_WINDOW = timedelta(minutes=5)
 MIN_AGENT_VERSION = "0.1.0"
 
+# ---------------------------------------------------------------------------
+# In-memory caches for ROM-library and launcher reports.
+#
+# Phase-1 design choice (blueprint 17 + 18):
+# The agent ships **aggregated counts only** — no titles, paths or hashes.
+# Because the data is pure summary state (always overwritten by the next
+# heartbeat) we cache it in-process keyed by ``device_id`` rather than
+# adding new SQL tables / migrations. On Railway restart the cache is empty
+# and gets repopulated by the next agent report.
+# ---------------------------------------------------------------------------
+_library_reports: dict[str, dict] = {}
+_launcher_reports: dict[str, dict] = {}
+
 
 # ---------------------------------------------------------------------------
 # Pydantic models (v2)
@@ -840,4 +853,245 @@ async def register_device(
         ram_gb=device.ram_gb,
         shizuku_available=device.shizuku_available,
         detected_chipset_id=detected,
+    )
+
+
+# ---------------------------------------------------------------------------
+# ROM-library + launcher endpoints (Blueprint 17 + 18)
+#
+# These endpoints carry **aggregated, anonymous counts** only. ROM titles,
+# paths and SHA1 hashes are not transmitted — they remain in the agent's
+# private SQLite index. This satisfies blueprint 17's privacy constraint and
+# DSA art. 6.
+# ---------------------------------------------------------------------------
+
+
+class LibraryStatsRequest(BaseModel):
+    """Aggregated ROM-library stats posted by the on-device agent."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    hardware_fingerprint: str = Field(..., min_length=8, max_length=128)
+    total_count: int = Field(0, ge=0)
+    by_platform: dict[str, int] = Field(default_factory=dict)
+    preinstalled_count: int = Field(0, ge=0)
+    duplicate_groups_exact: int = Field(0, ge=0)
+    duplicate_groups_probable: int = Field(0, ge=0)
+    language_candidates: int = Field(0, ge=0)
+    scan_completed_at: Optional[datetime] = None
+
+
+class LibraryStatsResponse(BaseModel):
+    device_id: str
+    total_count: int
+    by_platform: dict[str, int]
+    preinstalled_count: int
+    duplicate_groups_exact: int
+    duplicate_groups_probable: int
+    language_candidates: int
+    scan_completed_at: Optional[datetime]
+    reported_at: datetime
+
+
+class LauncherInfo(BaseModel):
+    """Single detected launcher entry."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    package_name: str = Field(..., min_length=1, max_length=255)
+    display_name: str = Field(..., min_length=1, max_length=255)
+    is_default_home: bool = False
+    is_installed: bool = True
+    boxart_capability: str = Field("none", max_length=32)  # auto | manual | none
+    video_capability: str = Field("none", max_length=32)   # auto | manual | none
+    notes: Optional[str] = Field(None, max_length=512)
+
+
+class LauncherReportRequest(BaseModel):
+    """Aggregated launcher-detection report from the on-device agent."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    hardware_fingerprint: str = Field(..., min_length=8, max_length=128)
+    detected: list[LauncherInfo] = Field(default_factory=list)
+    active_home_package: Optional[str] = Field(None, max_length=255)
+    detected_at: Optional[datetime] = None
+
+
+class LauncherReportResponse(BaseModel):
+    device_id: str
+    detected: list[LauncherInfo]
+    active_home_package: Optional[str]
+    detected_at: Optional[datetime]
+    reported_at: datetime
+
+
+async def _resolve_device_by_fingerprint(
+    session: AsyncSession, fingerprint: str
+) -> Device:
+    result = await session.execute(
+        select(Device).where(Device.hardware_fingerprint == fingerprint)
+    )
+    device = result.scalar_one_or_none()
+    if device is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                f"No device for fingerprint '{fingerprint[:12]}…'. "
+                "Call POST /devices/heartbeat first."
+            ),
+        )
+    return device
+
+
+@router.post(
+    "/library/scan-results",
+    response_model=LibraryStatsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Agent posts aggregated ROM-library scan results.",
+)
+@limiter.limit("30/minute")
+async def post_library_scan(
+    request: Request,
+    payload: LibraryStatsRequest,
+    session: SessionDep,
+) -> LibraryStatsResponse:
+    """Receive aggregated ROM-library counters from the on-device agent.
+
+    The payload contains **counts only** — no game titles, paths or hashes.
+    Stored in-memory keyed by ``device_id`` (overwritten on each report).
+    """
+    device = await _resolve_device_by_fingerprint(
+        session, payload.hardware_fingerprint
+    )
+    now = datetime.now(timezone.utc)
+    record = {
+        "device_id": device.id,
+        "total_count": payload.total_count,
+        "by_platform": dict(payload.by_platform),
+        "preinstalled_count": payload.preinstalled_count,
+        "duplicate_groups_exact": payload.duplicate_groups_exact,
+        "duplicate_groups_probable": payload.duplicate_groups_probable,
+        "language_candidates": payload.language_candidates,
+        "scan_completed_at": payload.scan_completed_at,
+        "reported_at": now,
+    }
+    _library_reports[device.id] = record
+    logger.info(
+        "Library scan stored: device=%s total=%d preinstalled=%d dup_exact=%d",
+        device.id,
+        payload.total_count,
+        payload.preinstalled_count,
+        payload.duplicate_groups_exact,
+    )
+    return LibraryStatsResponse(**record)
+
+
+@router.get(
+    "/{device_id}/library",
+    response_model=LibraryStatsResponse,
+    summary="Latest aggregated ROM-library stats for a device.",
+)
+async def get_device_library(
+    device_id: str, session: SessionDep
+) -> LibraryStatsResponse:
+    """Return the most recent ROM-library report posted by the agent.
+
+    Returns 404 with a friendly hint if the agent hasn't reported yet.
+    """
+    # Verify the device exists first (better error than 'no library data').
+    result = await session.execute(select(Device).where(Device.id == device_id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Unknown device '{device_id}'.",
+        )
+    record = _library_reports.get(device_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "No ROM-library report for this device yet. "
+                "The agent will post it after the first scan."
+            ),
+        )
+    return LibraryStatsResponse(**record)
+
+
+@router.post(
+    "/launchers/report",
+    response_model=LauncherReportResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Agent posts detected launcher inventory.",
+)
+@limiter.limit("30/minute")
+async def post_launcher_report(
+    request: Request,
+    payload: LauncherReportRequest,
+    session: SessionDep,
+) -> LauncherReportResponse:
+    """Receive the agent's launcher-detection report.
+
+    Each entry includes capability flags so the frontend /media page knows
+    whether boxart / gameplay video can be auto-fetched, requires manual
+    setup, or is unsupported per launcher.
+    """
+    device = await _resolve_device_by_fingerprint(
+        session, payload.hardware_fingerprint
+    )
+    now = datetime.now(timezone.utc)
+    record = {
+        "device_id": device.id,
+        "detected": [info.model_dump() for info in payload.detected],
+        "active_home_package": payload.active_home_package,
+        "detected_at": payload.detected_at,
+        "reported_at": now,
+    }
+    _launcher_reports[device.id] = record
+    logger.info(
+        "Launcher report stored: device=%s count=%d home=%s",
+        device.id,
+        len(payload.detected),
+        payload.active_home_package,
+    )
+    # Re-hydrate for response (model_validate works on plain dicts too).
+    return LauncherReportResponse(
+        device_id=device.id,
+        detected=payload.detected,
+        active_home_package=payload.active_home_package,
+        detected_at=payload.detected_at,
+        reported_at=now,
+    )
+
+
+@router.get(
+    "/{device_id}/launchers",
+    response_model=LauncherReportResponse,
+    summary="Latest launcher-detection report for a device.",
+)
+async def get_device_launchers(
+    device_id: str, session: SessionDep
+) -> LauncherReportResponse:
+    """Return the most recent launcher-detection report from the agent."""
+    result = await session.execute(select(Device).where(Device.id == device_id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Unknown device '{device_id}'.",
+        )
+    record = _launcher_reports.get(device_id)
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "No launcher report for this device yet. "
+                "The agent will post it after first launcher scan."
+            ),
+        )
+    return LauncherReportResponse(
+        device_id=record["device_id"],
+        detected=[LauncherInfo(**i) for i in record["detected"]],
+        active_home_package=record["active_home_package"],
+        detected_at=record["detected_at"],
+        reported_at=record["reported_at"],
     )
