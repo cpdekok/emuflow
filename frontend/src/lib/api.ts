@@ -88,11 +88,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+export interface LibraryStats {
+  device_id: string;
+  total_count: number;
+  by_platform: Record<string, number>;
+  preinstalled_count: number;
+  duplicate_groups_exact: number;
+  duplicate_groups_probable: number;
+  language_candidates: number;
+  scan_completed_at: string | null;
+  reported_at: string;
+}
+
+export interface LauncherInfo {
+  package_name: string;
+  display_name: string;
+  is_default_home: boolean;
+  is_installed: boolean;
+  boxart_capability: "auto" | "manual" | "none";
+  video_capability: "auto" | "manual" | "none";
+  notes: string | null;
+}
+
+export interface LauncherReport {
+  device_id: string;
+  detected: LauncherInfo[];
+  active_home_package: string | null;
+  detected_at: string | null;
+  reported_at: string;
+}
+
 export const api = {
   listDevices: () => request<DeviceListItem[]>("/devices"),
   getDeviceEvents: (deviceId: string, limit = 25) =>
     request<{ events: unknown[] }>(
       `/devices/${encodeURIComponent(deviceId)}/events?limit=${limit}`,
     ),
+  getDeviceLibrary: (deviceId: string) =>
+    request<LibraryStats>(`/devices/${encodeURIComponent(deviceId)}/library`),
+  getDeviceLaunchers: (deviceId: string) =>
+    request<LauncherReport>(`/devices/${encodeURIComponent(deviceId)}/launchers`),
   health: () => request<{ status: string; version: string }>("/health"),
 };

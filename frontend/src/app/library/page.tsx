@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ShieldCheckIcon,
   DocumentDuplicateIcon,
@@ -11,6 +11,7 @@ import {
   CheckCircleIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { api, type DeviceListItem, type LibraryStats, ApiError } from "@/lib/api";
 
 type Tab = "preserve" | "duplicates" | "languages";
 
@@ -68,10 +69,49 @@ const LANGUAGE_CANDIDATES: Rom[] = [
 
 export default function LibraryPage() {
   const [tab, setTab] = useState<Tab>("preserve");
+  const [device, setDevice] = useState<DeviceListItem | null>(null);
+  const [stats, setStats] = useState<LibraryStats | null>(null);
+  const [liveStatus, setLiveStatus] = useState<"loading" | "live" | "none" | "offline">("loading");
 
-  const totalRoms = 423;
-  const exactGroups = DUPLICATE_GROUPS.filter((g) => g.kind === "exact").length;
-  const probableGroups = DUPLICATE_GROUPS.filter((g) => g.kind === "probable").length;
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const devices = await api.listDevices();
+        if (cancelled) return;
+        const online = devices.find((d) => d.online) ?? devices[0] ?? null;
+        setDevice(online);
+        if (!online) {
+          setLiveStatus("offline");
+          return;
+        }
+        try {
+          const s = await api.getDeviceLibrary(online.device_id);
+          if (cancelled) return;
+          setStats(s);
+          setLiveStatus("live");
+        } catch (err) {
+          if (cancelled) return;
+          if (err instanceof ApiError && err.status === 404) {
+            setLiveStatus("none");
+          } else {
+            setLiveStatus("offline");
+          }
+        }
+      } catch {
+        if (!cancelled) setLiveStatus("offline");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const totalRoms = stats?.total_count ?? 423;
+  const preservedCount = stats?.preinstalled_count ?? PRESERVED.length;
+  const exactGroups = stats?.duplicate_groups_exact ?? DUPLICATE_GROUPS.filter((g) => g.kind === "exact").length;
+  const probableGroups = stats?.duplicate_groups_probable ?? DUPLICATE_GROUPS.filter((g) => g.kind === "probable").length;
+  const languageCount = stats?.language_candidates ?? LANGUAGE_CANDIDATES.length;
 
   return (
     <div className="p-8 space-y-6 max-w-7xl">
@@ -83,10 +123,12 @@ export default function LibraryPage() {
         </p>
       </header>
 
+      <LiveBanner status={liveStatus} device={device} stats={stats} />
+
       {/* KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPI label="Games" value={String(totalRoms)} />
-        <KPI label="Beschermd" value={String(PRESERVED.length)} accent="emerald" />
+        <KPI label="Beschermd" value={String(preservedCount)} accent="emerald" />
         <KPI label="Exacte duplicaten" value={String(exactGroups)} accent="amber" />
         <KPI label="Waarschijnlijke duplicaten" value={String(probableGroups)} accent="amber" />
       </div>
@@ -109,7 +151,7 @@ export default function LibraryPage() {
         <nav className="-mb-px flex gap-6">
           <TabButton current={tab} value="preserve" onChange={setTab} icon={ShieldCheckIcon} label="Beschermd" count={PRESERVED.length} />
           <TabButton current={tab} value="duplicates" onChange={setTab} icon={DocumentDuplicateIcon} label="Duplicaten" count={DUPLICATE_GROUPS.length} />
-          <TabButton current={tab} value="languages" onChange={setTab} icon={LanguageIcon} label="Talen" count={LANGUAGE_CANDIDATES.length} />
+          <TabButton current={tab} value="languages" onChange={setTab} icon={LanguageIcon} label="Talen" count={languageCount} />
         </nav>
       </div>
 
@@ -335,4 +377,50 @@ function formatSize(mb: number): string {
   if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
   if (mb >= 1) return `${mb.toFixed(0)} MB`;
   return `${(mb * 1024).toFixed(0)} KB`;
+}
+
+function LiveBanner({
+  status,
+  device,
+  stats,
+}: {
+  status: "loading" | "live" | "none" | "offline";
+  device: DeviceListItem | null;
+  stats: LibraryStats | null;
+}) {
+  if (status === "loading") {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">
+        Bezig met ophalen van device-data…
+      </div>
+    );
+  }
+  if (status === "offline" || !device) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400 flex items-center gap-2">
+        <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
+        Geen device verbonden — voorbeelddata wordt getoond.
+      </div>
+    );
+  }
+  if (status === "none") {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400 flex items-center gap-2">
+        <InformationCircleIcon className="w-4 h-4 text-sky-400" />
+        Verbonden met <span className="text-slate-200 font-medium">{device.device_name}</span> — agent
+        heeft nog geen ROM-scan gerapporteerd. Voorbeelddata wordt getoond.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border border-emerald-800/60 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200 flex items-center gap-2">
+      <CheckCircleIcon className="w-4 h-4 text-emerald-400" />
+      Live data van <span className="font-medium">{device.device_name}</span>
+      {stats?.scan_completed_at && (
+        <span className="text-emerald-300/80">
+          · scan {new Date(stats.scan_completed_at).toLocaleString("nl-NL")}
+        </span>
+      )}
+    </div>
+  );
 }

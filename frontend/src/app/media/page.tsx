@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -7,7 +8,9 @@ import {
   VideoCameraIcon,
   ArrowTopRightOnSquareIcon,
   InformationCircleIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { api, type DeviceListItem, type LauncherReport, ApiError } from "@/lib/api";
 
 type LauncherCard = {
   package_name: string;
@@ -77,6 +80,57 @@ const SCRAPER_TOOLS = [
 ];
 
 export default function MediaPage() {
+  const [device, setDevice] = useState<DeviceListItem | null>(null);
+  const [report, setReport] = useState<LauncherReport | null>(null);
+  const [liveStatus, setLiveStatus] = useState<"loading" | "live" | "none" | "offline">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const devices = await api.listDevices();
+        if (cancelled) return;
+        const online = devices.find((d) => d.online) ?? devices[0] ?? null;
+        setDevice(online);
+        if (!online) {
+          setLiveStatus("offline");
+          return;
+        }
+        try {
+          const r = await api.getDeviceLaunchers(online.device_id);
+          if (cancelled) return;
+          setReport(r);
+          setLiveStatus("live");
+        } catch (err) {
+          if (cancelled) return;
+          if (err instanceof ApiError && err.status === 404) {
+            setLiveStatus("none");
+          } else {
+            setLiveStatus("offline");
+          }
+        }
+      } catch {
+        if (!cancelled) setLiveStatus("offline");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const liveLaunchers: LauncherCard[] = report
+    ? report.detected.map((d) => ({
+        package_name: d.package_name,
+        display_name: d.display_name,
+        installed: d.is_installed,
+        is_default: d.is_default_home,
+        boxart_auto: d.boxart_capability === "auto",
+        video_auto: d.video_capability === "auto",
+        source: d.notes ?? "",
+        notes: d.notes ?? "",
+      }))
+    : LAUNCHERS;
+
   return (
     <div className="p-8 space-y-6 max-w-7xl">
       <header className="space-y-2">
@@ -86,6 +140,8 @@ export default function MediaPage() {
           We hosten zelf geen boxart of videos — we verwijzen naar de bestaande scrapers.
         </p>
       </header>
+
+      <MediaLiveBanner status={liveStatus} device={device} />
 
       <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 flex items-start gap-3">
         <InformationCircleIcon className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
@@ -99,7 +155,7 @@ export default function MediaPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">Gedetecteerde launchers</h2>
         <div className="grid gap-3">
-          {LAUNCHERS.map((l) => (
+          {liveLaunchers.map((l) => (
             <LauncherRow key={l.package_name} launcher={l} />
           ))}
         </div>
@@ -205,6 +261,45 @@ function CapabilityRow({
       ) : (
         <XCircleIcon className="w-5 h-5 text-slate-600" />
       )}
+    </div>
+  );
+}
+
+function MediaLiveBanner({
+  status,
+  device,
+}: {
+  status: "loading" | "live" | "none" | "offline";
+  device: DeviceListItem | null;
+}) {
+  if (status === "loading") {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">
+        Bezig met ophalen van device-data…
+      </div>
+    );
+  }
+  if (status === "offline" || !device) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400 flex items-center gap-2">
+        <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
+        Geen device verbonden — voorbeelddata wordt getoond.
+      </div>
+    );
+  }
+  if (status === "none") {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400 flex items-center gap-2">
+        <InformationCircleIcon className="w-4 h-4 text-sky-400" />
+        Verbonden met <span className="text-slate-200 font-medium">{device.device_name}</span> — agent
+        heeft nog geen launcher-scan gerapporteerd. Voorbeelddata wordt getoond.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg border border-emerald-800/60 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200 flex items-center gap-2">
+      <CheckCircleIcon className="w-4 h-4 text-emerald-400" />
+      Live launcher-data van <span className="font-medium">{device.device_name}</span>
     </div>
   );
 }

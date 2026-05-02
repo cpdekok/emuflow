@@ -551,3 +551,98 @@ async def test_cors_preflight_allowed_origin(client: AsyncClient) -> None:
     )
     assert r.status_code == 200
     assert r.headers.get("access-control-allow-origin") == "https://emuflow.app"
+
+
+# ---------------------------------------------------------------------------
+# Blueprint 17 + 18: ROM-library and launcher report endpoints
+# ---------------------------------------------------------------------------
+
+
+async def test_library_scan_post_and_get(client: AsyncClient) -> None:
+    """Agent posts aggregated counts, frontend reads them back."""
+    # 1) Heartbeat first to register the device.
+    fp = "fp-lib-" + "x" * 30
+    r = await client.post("/devices/heartbeat", json=_heartbeat_payload(hardware_fingerprint=fp))
+    assert r.status_code == 200
+    device_id = r.json()["device_id"]
+
+    # 2) Agent posts library scan.
+    payload = {
+        "hardware_fingerprint": fp,
+        "total_count": 423,
+        "by_platform": {"snes": 120, "psx": 80, "gb": 50},
+        "preinstalled_count": 3,
+        "duplicate_groups_exact": 1,
+        "duplicate_groups_probable": 2,
+        "language_candidates": 7,
+    }
+    r2 = await client.post("/devices/library/scan-results", json=payload)
+    assert r2.status_code == 200
+    body = r2.json()
+    assert body["device_id"] == device_id
+    assert body["total_count"] == 423
+    assert body["preinstalled_count"] == 3
+    assert body["by_platform"]["snes"] == 120
+
+    # 3) Frontend GET returns the same record.
+    r3 = await client.get(f"/devices/{device_id}/library")
+    assert r3.status_code == 200
+    assert r3.json()["total_count"] == 423
+
+
+async def test_library_get_unknown_device_returns_404(client: AsyncClient) -> None:
+    r = await client.get("/devices/00000000-0000-0000-0000-000000000000/library")
+    assert r.status_code == 404
+
+
+async def test_library_post_unknown_fingerprint_returns_404(client: AsyncClient) -> None:
+    r = await client.post(
+        "/devices/library/scan-results",
+        json={
+            "hardware_fingerprint": "fp-unknown-" + "z" * 30,
+            "total_count": 1,
+        },
+    )
+    assert r.status_code == 404
+
+
+async def test_launcher_report_post_and_get(client: AsyncClient) -> None:
+    fp = "fp-lau-" + "y" * 30
+    r = await client.post("/devices/heartbeat", json=_heartbeat_payload(hardware_fingerprint=fp))
+    assert r.status_code == 200
+    device_id = r.json()["device_id"]
+
+    payload = {
+        "hardware_fingerprint": fp,
+        "active_home_package": "com.magneticchen.daijishou",
+        "detected": [
+            {
+                "package_name": "com.magneticchen.daijishou",
+                "display_name": "Daijisho",
+                "is_default_home": True,
+                "is_installed": True,
+                "boxart_capability": "auto",
+                "video_capability": "auto",
+                "notes": "TapiocaFox CDN streaming",
+            },
+            {
+                "package_name": "org.es_de.frontend",
+                "display_name": "ES-DE",
+                "is_default_home": False,
+                "is_installed": True,
+                "boxart_capability": "auto",
+                "video_capability": "auto",
+                "notes": "ScreenScraper account required",
+            },
+        ],
+    }
+    r2 = await client.post("/devices/launchers/report", json=payload)
+    assert r2.status_code == 200
+    assert r2.json()["device_id"] == device_id
+    assert len(r2.json()["detected"]) == 2
+
+    r3 = await client.get(f"/devices/{device_id}/launchers")
+    assert r3.status_code == 200
+    body = r3.json()
+    assert body["active_home_package"] == "com.magneticchen.daijishou"
+    assert body["detected"][0]["display_name"] == "Daijisho"
