@@ -229,11 +229,16 @@ private data class ControllerDetectionResult(
  * - Controleer AXIS_LTRIGGER / AXIS_RTRIGGER voor analoge triggers
  */
 private fun detectControllerInfo(): ControllerDetectionResult {
-    val internalGamepad = InputDevice.getDeviceIds()
-        .mapNotNull { InputDevice.getDevice(it) }
-        .firstOrNull { device ->
-            device.sources and InputDevice.SOURCE_GAMEPAD != 0 && !device.isExternal
+    val ids: IntArray = InputDevice.getDeviceIds() ?: IntArray(0)
+    var internalGamepad: InputDevice? = null
+    for (id in ids) {
+        val device: InputDevice = InputDevice.getDevice(id) ?: continue
+        val src: Int = device.sources
+        if ((src and InputDevice.SOURCE_GAMEPAD) != 0 && !device.isExternal) {
+            internalGamepad = device
+            break
         }
+    }
 
     if (internalGamepad == null) {
         Log.d(TAG, "Geen interne gamepad gedetecteerd")

@@ -46,22 +46,37 @@ object ControllerDetector {
      * @return [ControllerInfo] of null als geen interne gamepad gevonden
      */
     fun detectInternalGamepad(): ControllerInfo? {
-        val allDevices = InputDevice.getDeviceIds()
-            .mapNotNull { InputDevice.getDevice(it) }
+        val allDevices: List<InputDevice> = collectInputDevices()
 
-        val gamepadDevices = allDevices.filter { device ->
-            device.sources and InputDevice.SOURCE_GAMEPAD != 0 ||
-                device.sources and InputDevice.SOURCE_JOYSTICK != 0
+        val gamepadDevices: List<InputDevice> = allDevices.filter { device ->
+            val src: Int = device.sources
+            (src and InputDevice.SOURCE_GAMEPAD) != 0 ||
+                (src and InputDevice.SOURCE_JOYSTICK) != 0
         }
 
         Log.d(TAG, "Gevonden input-devices: ${gamepadDevices.map { it.name }}")
 
-        val internalGamepad = gamepadDevices.firstOrNull { !it.isExternal }
-            ?: return null.also {
+        val internalGamepad: InputDevice = gamepadDevices.firstOrNull { !it.isExternal }
+            ?: run {
                 Log.w(TAG, "Geen interne gamepad gevonden — mogelijk tijdelijk uitgeschakeld (AYANEO quirk)")
+                return null
             }
 
         return buildControllerInfo(internalGamepad, isInternal = true)
+    }
+
+    /**
+     * Verzamelt alle [InputDevice]-instanties expliciet zodat overload-resolutie
+     * niet faalt op de [IntArray] return-type van [InputDevice.getDeviceIds].
+     */
+    private fun collectInputDevices(): List<InputDevice> {
+        val ids: IntArray = InputDevice.getDeviceIds() ?: return emptyList()
+        val result = ArrayList<InputDevice>(ids.size)
+        for (id in ids) {
+            val device: InputDevice? = InputDevice.getDevice(id)
+            if (device != null) result.add(device)
+        }
+        return result
     }
 
     /**
@@ -70,17 +85,16 @@ object ControllerDetector {
      * @return Lijst van gedetecteerde externe controllers
      */
     fun detectExternalControllers(): List<ControllerInfo> {
-        return InputDevice.getDeviceIds()
-            .mapNotNull { InputDevice.getDevice(it) }
+        val externals: List<ControllerInfo> = collectInputDevices()
             .filter { device ->
+                val src: Int = device.sources
                 device.isExternal &&
-                    (device.sources and InputDevice.SOURCE_GAMEPAD != 0 ||
-                        device.sources and InputDevice.SOURCE_JOYSTICK != 0)
+                    ((src and InputDevice.SOURCE_GAMEPAD) != 0 ||
+                        (src and InputDevice.SOURCE_JOYSTICK) != 0)
             }
             .map { buildControllerInfo(it, isInternal = false) }
-            .also { controllers ->
-                Log.d(TAG, "Externe controllers: ${controllers.map { it.deviceName }}")
-            }
+        Log.d(TAG, "Externe controllers: ${externals.map { it.deviceName }}")
+        return externals
     }
 
     /**
