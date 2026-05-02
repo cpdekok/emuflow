@@ -12,12 +12,16 @@ import {
   RocketLaunchIcon,
   ScaleIcon,
   ChartBarIcon,
+  FolderIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/outline";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: HomeIcon },
   { href: "/devices", label: "Devices", icon: DevicePhoneMobileIcon },
   { href: "/setup", label: "Setup wizard", icon: RocketLaunchIcon },
+  { href: "/library", label: "Bibliotheek", icon: FolderIcon },
+  { href: "/media", label: "Boxart en video", icon: PhotoIcon },
   { href: "/controllers", label: "Controllers", icon: AdjustmentsHorizontalIcon },
   { href: "/updates", label: "Updates", icon: ArrowPathIcon },
   { href: "/bios", label: "BIOS", icon: ShieldCheckIcon },
