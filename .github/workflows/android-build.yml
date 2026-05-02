@@ -1,0 +1,85 @@
+name: Android Agent — Build APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android-agent/**"
+      - ".github/workflows/android-build.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "android-agent/**"
+  workflow_dispatch:
+  release:
+    types: [published]
+
+# Allow the workflow to upload assets to releases.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build debug + release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-disabled: false
+
+      - name: Make gradlew executable
+        working-directory: android-agent
+        run: chmod +x ./gradlew
+
+      - name: Build debug APK
+        working-directory: android-agent
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Build unsigned release APK
+        working-directory: android-agent
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Locate APKs
+        id: apks
+        run: |
+          set -euo pipefail
+          DEBUG_APK=$(find android-agent/app/build/outputs/apk/debug -name "*.apk" | head -1)
+          RELEASE_APK=$(find android-agent/app/build/outputs/apk/release -name "*.apk" | head -1)
+          echo "debug_apk=$DEBUG_APK" >> "$GITHUB_OUTPUT"
+          echo "release_apk=$RELEASE_APK" >> "$GITHUB_OUTPUT"
+          ls -lah "$DEBUG_APK" "$RELEASE_APK"
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: emuflow-agent-debug
+          path: ${{ steps.apks.outputs.debug_apk }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload unsigned release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: emuflow-agent-release-unsigned
+          path: ${{ steps.apks.outputs.release_apk }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach APKs to GitHub release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.apks.outputs.debug_apk }}
+            ${{ steps.apks.outputs.release_apk }}
