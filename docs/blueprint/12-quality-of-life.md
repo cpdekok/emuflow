@@ -154,6 +154,7 @@ Setup-QoL is verdeeld over drie modules in de Android Agent:
 3. Op `criticallyLow`: blokkerende waarschuwing met directe actie-link (vrijmaken, opladen).
 4. Permissions afgehandeld via `PermissionBundleManager.requestManageExternalStorage()` enz.
 5. Bij voltooiing: clean-slate-keuze (default A: vendor shells DISABLED).
+6. **Preserve-set vastleggen** — voordat clean-slate of auto-install draait, scant `ROMScanner` (zie doc 17) alle bekende vendor-paden en markeert aangetroffen ROM-bestanden als preinstalled. Deze set wordt nooit aangeraakt door clean-slate, auto-install of agent-uninstall.
 
 ### Pipeline bij Heartbeat
 - HeartbeatService roept elke N minuten `DeviceHealthChecker.snapshot()` aan en stuurt thermal_state, battery_level, battery_temperature_c mee in het payload-schema.
