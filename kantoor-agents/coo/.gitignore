@@ -1,0 +1,7 @@
+# Dossierdata en sleuteltabellen blijven lokaal op de Mac Mini — nooit naar git.
+data/inbox/*
+data/uitvoer/*
+data/sleutels/*
+!data/inbox/.gitkeep
+!data/uitvoer/.gitkeep
+!data/sleutels/.gitkeep

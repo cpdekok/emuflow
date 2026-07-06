@@ -1,0 +1,12 @@
+{
+  "trap2_vrijgegeven": false,
+  "toelichting": "Zet trap2_vrijgegeven pas op true wanneer aan ALLE voorwaarden hieronder is voldaan. Zolang dit op false staat weigeren de skills conceptaktecontrole en intakevoorbereiding om documenten met persoonsgegevens te openen.",
+  "voorwaarden": [
+    "Claude Code draait via een EU-backend: AWS Bedrock (bijv. eu-central-1) of Google Vertex AI (EU-regio), met verwerkersovereenkomst",
+    "DPIA uitgevoerd en verwerking opgenomen in het verwerkingsregister",
+    "Beoordeling door de notaris: verenigbaar met art. 22 Wna (geheimhoudingsplicht)"
+  ],
+  "eu_backend_indicatie": "CLAUDE_CODE_USE_BEDROCK=1 met AWS_REGION die met 'eu-' begint, of CLAUDE_CODE_USE_VERTEX=1 met een EU-regio",
+  "vrijgegeven_door": null,
+  "vrijgegeven_op": null
+}
