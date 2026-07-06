@@ -3,8 +3,9 @@
 AI-werkomgevingen voor het notariskantoor, gebouwd op Claude Code. Elke agent is een
 map met een eigen rolprofiel (`CLAUDE.md`), eigen skills en eigen datagrenzen.
 
-> **Let op:** deze map staat tijdelijk in de EmuFlow-repo maar staat er inhoudelijk
-> los van. Verplaats hem gerust naar een eigen (privé!) repository.
+> **Let op:** deze repository hoort privé te blijven. Er staat bewust géén
+> dossierdata in (`data/` is uitgesloten via `.gitignore`), maar de werkwijze
+> van het kantoor is intern.
 
 ## Wat zit erin
 
@@ -27,8 +28,8 @@ kantoor-agents/
 ## Installatie op de Mac Mini
 
 ```bash
-git pull                        # of: git clone <repo-url>
-cd kantoor-agents/coo
+git clone https://github.com/cpdekok/kantoor-agents.git ~/kantoor-agents
+cd ~/kantoor-agents/coo
 claude                          # start Claude Code in de COO-rol
 ```
 
