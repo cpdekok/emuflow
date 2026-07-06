@@ -37,9 +37,7 @@ schrijft pas na akkoord. Nieuwe canonfeiten komen automatisch in
 
 ## Openstaand
 
-- **Personages aanvullen**: de bijbel brak in de bronversie af na Sophie;
-  het derde hoofdpersonage ("Om…") en eventuele overige personages moeten
-  opnieuw worden aangeleverd of uitgewerkt (zie de markering in
-  `projectbijbel.md`).
 - De oorspronkelijke hoofdstukken zijn niet meegekomen en worden opnieuw
   geschreven — dat is een bewuste keuze.
+- Namen en details van de ruim twintig bijkarakters worden tijdens het
+  schrijven vastgelegd in `canon-log.md`.

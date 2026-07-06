@@ -20,21 +20,55 @@ via technologie en sociale controle.
 
 ## Hoofdpersonages
 
-### Thomas Bakker (42)
-Ex-financieel analist. Nuchter, cynisch, verborgen idealist. Weigert
-NeuraLink. **Arc:** onwillige student → verzetsleider → onderhandelaar
-met kosmisch bewustzijn.
+### Thomas Bakker (42) — hoofdpersoon
+Ex-financieel analist bij een grote bank. Nuchter, pragmatisch, cynisch,
+verborgen idealist. Weigert NeuraLink. Getrouwd met Marieke, twee tieners
+(Lieke en Tim). **Arc:** onwillige student → verzetsleider →
+onderhandelaar met kosmisch bewustzijn.
 
 ### Sophie Vos-Reijnders (38)
-Indo-Nederlands (grootouders repatriëring jaren '50). Charmant, marketeer.
-Worstelt met seksuele identiteit (Jing Lam).
+Indo-Nederlandse ex-marketingmanager; grootouders in de jaren '50
+gerepatrieerd uit Indonesië. Energiek, sociaal, charmant. Gescheiden,
+co-ouderschap over een tienerdochter. Worstelt met haar seksuele
+identiteit (Jing Lam).
 
-### ⚠️ AAN TE VULLEN
-De bronversie van deze bijbel brak af na Sophie, midden in een derde
-personage waarvan de naam met "Om…" begint. Overige hoofdpersonages
-(en bijrollen zoals Jing Lam) moeten door de auteur worden aangeleverd
-of opnieuw worden uitgewerkt vóór het schrijven van scènes waarin ze
-een rol spelen.
+### Omar Alawi (45)
+Tweede generatie Marokkaans-Nederlandse restauranteigenaar; zijn
+fusion-keten is overgenomen door AI-keukens. Praktisch, creatief,
+klassenclown. Gescheiden, woont met zijn twee kinderen bij zijn ouders.
+
+### Eva Smit (36)
+Surinaams-Chinese kunstenares. Gevoelig en intuïtief, met een onverwacht
+talent voor synthetische biologie. Loopt stage bij een AI-acteur.
+
+### Anna Klein (67)
+Voormalig hoogleraar geschiedenis (Nederlands kolonialisme). Scherpe
+tong, eigenzinnig. Weduwe met een verrassend wilde kant.
+
+### Lukas Berg (35)
+Tech-miljardair die alles kwijtraakte door een mysterieuze hack.
+Getalenteerd maar arrogant; populaire pestkop met verborgen onzekerheid.
+
+### Mark Visser (48)
+Ex-politieagent. Rechtlijnig en wantrouwig; ruikt als eerste dat er iets
+niet klopt. Paranoïde dagboekschrijver.
+
+### Max Dekker (72)
+Gepensioneerd kolonel. Stug en gedisciplineerd; zijn militaire
+achtergrond blijkt waardevol.
+
+### Meneer Yusuf Albarazi (21)
+Syrische docent met drie doctoraten.
+
+### Leon Maarseveen (39)
+Ex-cybercrimineel, verplicht ingeschreven via het Transitioneel
+Arbeidsprogramma.
+
+### Bijkarakters
+Ruim twintig diverse bijrollen: Indo, Surinaams-Chinees, Turks,
+Marokkaans, Oost-Europees; verdeeld over de reguliere, criminele en
+bijstands-track van de Herschool. Namen en details worden tijdens het
+schrijven vastgelegd in `canon-log.md`.
 
 ## Stijl
 
