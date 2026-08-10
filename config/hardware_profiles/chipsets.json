@@ -16,6 +16,62 @@
     "renderer_options": ["vulkan", "opengl", "opengl_es"],
     "notes": "Alle aanbevelingen zijn gebaseerd op community testing en retro gaming guide aanbevelingen. Instellingen kunnen variëren per specifiek spel en ROM."
   },
+  "chipset_id": "emuflow_chipset_database",
+  "chipset_display": "EmuFlow Hardware Chipset Database (6 chipsets)",
+  "gpu_family": ["Mali (Unisoc/MediaTek)", "Adreno (Qualcomm)"],
+  "vulkan_support": true,
+  "ram_gb_typical": 8,
+  "emulation_profiles": {
+    "nes_snes_gba": {
+      "full_name": "Nintendo Entertainment System / Super Nintendo / Game Boy Advance",
+      "difficulty": "laag",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "low-mid",
+      "notes": "Draait op elke chipset in de database. Zelfs de T618 haalt maximale resolutieschaling."
+    },
+    "psp_nds": {
+      "full_name": "PlayStation Portable / Nintendo DS",
+      "difficulty": "laag-midden",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "low-mid",
+      "notes": "Standalone PPSSPP/DraStic aanbevolen. Resolutieschaling schaalt mee met de tier."
+    },
+    "ps1": {
+      "full_name": "PlayStation 1",
+      "difficulty": "laag-midden",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "low-mid",
+      "notes": "Beetle PSX HW (Vulkan) op mid-tier en hoger; PCSX ReARMed op de T618 zonder Vulkan."
+    },
+    "n64": {
+      "full_name": "Nintendo 64",
+      "difficulty": "midden",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "mid",
+      "notes": "Zwaar voor de T618 (native resolutie). Mid-tier en hoger schalen probleemloos."
+    },
+    "ps2": {
+      "full_name": "PlayStation 2",
+      "difficulty": "hoog",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "mid",
+      "notes": "NetherSX2. Niet aanbevolen op de T618; vanaf G99 acceptabel, vanaf D1100 goed."
+    },
+    "gamecube_wii": {
+      "full_name": "Nintendo GameCube / Wii",
+      "difficulty": "hoog",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "upper-mid",
+      "notes": "Dolphin. Niet aanbevolen onder de D1100; flagship-chipsets draaien de meeste titels."
+    },
+    "switch": {
+      "full_name": "Nintendo Switch",
+      "difficulty": "zeer hoog",
+      "default_renderer": "vulkan",
+      "min_performance_tier": "high",
+      "notes": "Yuzu/Sudachi. Alleen haalbaar vanaf Snapdragon 865; flagship-tier voor zware first-party titels."
+    }
+  },
   "chipsets": {
     "unisoc_t618": {
       "display_name": "Unisoc T618",
