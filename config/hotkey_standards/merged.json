@@ -1,13 +1,142 @@
 {
-  "input_menu_toggle_btn": "82",
-  "input_exit_emulator_btn": "2",
-  "input_save_state_btn": "11",
-  "input_load_state_btn": "10",
-  "input_fast_forward_btn": "13",
-  "input_rewind_btn": "12",
-  "input_reset_btn": "0",
-  "input_volume_up_axis": "+1",
-  "input_volume_down_axis": "-1",
-  "input_state_slot_increase_btn": "101",
-  "input_state_slot_decrease_btn": "100"
+  "metadata": {
+    "name": "EmuFlow Merged Default (RetroArch cfg mapping)",
+    "version": "1.0.0",
+    "source": "EmuFlow Default Standard - RetroArch cfg export (RGC + TechDweeb consensus)",
+    "emuflow_profile_id": "merged",
+    "based_on": ["rgc_standard", "techdweeb_standard", "merged_default"],
+    "description": "Ruwe RetroArch retroarch.cfg knopmapping voor de gecombineerde EmuFlow-standaard. De input_*-sleutels bevatten de RetroArch btn/axis-waarden zoals ze rechtstreeks in retroarch.cfg geschreven worden. Zie merged_default.json voor de volledige gedocumenteerde standaard met consensus-onderbouwing.",
+    "last_updated": "2025-01-01"
+  },
+  "hotkeys": {
+    "hotkey_enable": {
+      "button": "SELECT",
+      "retroarch_key": "input_enable_hotkey_btn",
+      "btn_index": "6",
+      "description": "Universele hotkey enable knop. Houd SELECT ingedrukt en druk een andere knop voor de gewenste actie."
+    },
+    "menu_toggle": {
+      "button": "X",
+      "retroarch_key": "input_menu_toggle_btn",
+      "value": "82",
+      "description": "Opent het RetroArch Quick Menu (EmuFlow: X primair, L3+R3 backup)."
+    },
+    "save_state": {
+      "button": "SELECT + R1",
+      "retroarch_key": "input_save_state_btn",
+      "value": "11",
+      "requires_hotkey": true,
+      "description": "Sla de huidige spelstatus op in de actieve saveslot."
+    },
+    "load_state": {
+      "button": "SELECT + L1",
+      "retroarch_key": "input_load_state_btn",
+      "value": "10",
+      "requires_hotkey": true,
+      "description": "Laad de opgeslagen spelstatus uit de actieve saveslot."
+    },
+    "fast_forward": {
+      "button": "SELECT + R2",
+      "retroarch_key": "input_fast_forward_btn",
+      "value": "13",
+      "requires_hotkey": true,
+      "description": "Schakel fast forward in/uit (EmuFlow: toggle-modus)."
+    },
+    "rewind": {
+      "button": "SELECT + L2",
+      "retroarch_key": "input_rewind_btn",
+      "value": "12",
+      "requires_hotkey": true,
+      "requires_setting": "rewind_enable = true",
+      "description": "Spoel het spel terug in de tijd (EmuFlow-keuze: rewind boven slow motion)."
+    },
+    "reset": {
+      "button": "SELECT + B",
+      "retroarch_key": "input_reset_btn",
+      "value": "0",
+      "requires_hotkey": true,
+      "description": "Soft reset van het huidige spel."
+    },
+    "quit": {
+      "button": "SELECT + START",
+      "retroarch_key": "input_exit_emulator_btn",
+      "value": "2",
+      "requires_hotkey": true,
+      "description": "Sluit de huidige content en keer terug naar het hoofdmenu."
+    },
+    "volume_up": {
+      "button": "SELECT + D-pad Up",
+      "retroarch_key": "input_volume_up_axis",
+      "value": "+1",
+      "requires_hotkey": true,
+      "description": "Verhoog het systeemvolume (EmuFlow: volume op Up/Down)."
+    },
+    "volume_down": {
+      "button": "SELECT + D-pad Down",
+      "retroarch_key": "input_volume_down_axis",
+      "value": "-1",
+      "requires_hotkey": true,
+      "description": "Verlaag het systeemvolume."
+    },
+    "next_save_slot": {
+      "button": "SELECT + D-pad Right",
+      "retroarch_key": "input_state_slot_increase_btn",
+      "value": "101",
+      "requires_hotkey": true,
+      "description": "Ga naar de volgende saveslot."
+    },
+    "previous_save_slot": {
+      "button": "SELECT + D-pad Left",
+      "retroarch_key": "input_state_slot_decrease_btn",
+      "value": "100",
+      "requires_hotkey": true,
+      "description": "Ga naar de vorige saveslot."
+    }
+  },
+  "recommended_settings": {
+    "auto_save": {
+      "key": "savestate_auto_save",
+      "value": true,
+      "retroarch_cfg": "savestate_auto_save = \"true\"",
+      "description": "Sla automatisch de spelstatus op bij het verlaten van content."
+    },
+    "auto_load": {
+      "key": "savestate_auto_load",
+      "value": true,
+      "retroarch_cfg": "savestate_auto_load = \"true\"",
+      "description": "Laad automatisch de laatste autosave bij het starten van content."
+    },
+    "confirm_quit": {
+      "key": "quit_press_twice",
+      "value": false,
+      "retroarch_cfg": "quit_press_twice = \"false\"",
+      "description": "Geen bevestigingsvenster bij afsluiten."
+    },
+    "input_block_timeout": {
+      "key": "input_block_timeout",
+      "value": 1,
+      "retroarch_cfg": "input_block_timeout = \"1\"",
+      "platform": "Android",
+      "description": "Android-specifiek: blokkeer invoer 1 frame na menu-opening."
+    },
+    "rewind_globally": {
+      "key": "rewind_enable",
+      "value": false,
+      "retroarch_cfg": "rewind_enable = \"false\"",
+      "description": "Rewind standaard UIT wegens prestatieimpact. Inschakelen per-core voor lichte systemen."
+    }
+  },
+  "raw_bindings": {
+    "input_menu_toggle_btn": "82",
+    "input_exit_emulator_btn": "2",
+    "input_save_state_btn": "11",
+    "input_load_state_btn": "10",
+    "input_fast_forward_btn": "13",
+    "input_rewind_btn": "12",
+    "input_reset_btn": "0",
+    "input_volume_up_axis": "+1",
+    "input_volume_down_axis": "-1",
+    "input_state_slot_increase_btn": "101",
+    "input_state_slot_decrease_btn": "100"
+  }
 }
